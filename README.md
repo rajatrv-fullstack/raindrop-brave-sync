@@ -6,13 +6,28 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue.svg"></a>
-  <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-lightgrey.svg">
-  <img alt="Brave" src="https://img.shields.io/badge/browser-Brave%20%2F%20Chromium-orange.svg">
-  <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib%20only-green.svg">
-  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen.svg">
-  <a href="RESEARCH.md"><img alt="Research" src="https://img.shields.io/badge/RESEARCH.md-10%20findings-8a2be2.svg"></a>
+  <a href="https://raindrop.io"><img alt="Raindrop.io" src="https://img.shields.io/badge/Raindrop.io-0B70FF?style=for-the-badge&logo=raindropdotio&logoColor=white"></a>
+  <a href="https://brave.com"><img alt="Brave" src="https://img.shields.io/badge/Brave-FB542B?style=for-the-badge&logo=brave&logoColor=white"></a>
+  <a href="https://claude.com/claude-code"><img alt="Claude" src="https://img.shields.io/badge/Claude-D97757?style=for-the-badge&logo=claude&logoColor=white"></a>
+  <a href="https://www.anthropic.com"><img alt="Anthropic" src="https://img.shields.io/badge/Anthropic-191919?style=for-the-badge&logo=anthropic&logoColor=white"></a>
 </p>
+
+<p align="center">
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white">
+  <img alt="JavaScript" src="https://img.shields.io/badge/MV3_Extension-F7DF1E?style=flat-square&logo=javascript&logoColor=black">
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white">
+  <img alt="Bash" src="https://img.shields.io/badge/launchd-4EAA25?style=flat-square&logo=gnubash&logoColor=white">
+  <img alt="Chromium" src="https://img.shields.io/badge/Chromium-4285F4?style=flat-square&logo=googlechrome&logoColor=white">
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue?style=flat-square"></a>
+  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square">
+  <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib_only-green?style=flat-square">
+  <a href="RESEARCH.md"><img alt="Research" src="https://img.shields.io/badge/RESEARCH.md-10_findings-8a2be2?style=flat-square"></a>
+</p>
+
 
 <p align="center">
   <a href="#architecture">Architecture</a> ·
@@ -68,13 +83,12 @@ Two phases, deliberately split. Phase A does network and LLM work and never touc
 file. Phase B touches the browser and never touches the network.
 
 ```mermaid
-flowchart TD
-    subgraph PA ["PHASE A · classify — network + LLM, never touches a browser file"]
+flowchart LR
+    subgraph PA ["🧠 PHASE A · classify — network + LLM, never touches a browser file"]
         direction TB
-        A["Raindrop.io library"]
-        B{"delta vs ledger<br/>sha256 over RAW link + title"}
-        Z["exit — no work"]
-        C["LLM classifies the delta<br/>into the PINNED taxonomy"]
+        A["Raindrop.io<br/>library"]
+        B{"delta vs ledger<br/>sha256 over RAW<br/>link + title"}
+        C["LLM classifies<br/>into the PINNED<br/>taxonomy"]
         C2["nothing fits?<br/><b>create a collection</b><br/><i>never a bin</i>"]
         D["write back<br/>collections + tags"]
         E{"promotion gate<br/><i>reject by default</i>"}
@@ -82,7 +96,7 @@ flowchart TD
 
     F[("desired.json<br/><i>the only handoff</i>")]
 
-    subgraph PB ["PHASE B · apply — browser only, never touches the network"]
+    subgraph PB ["🌐 PHASE B · apply — browser only, never touches the network"]
         direction TB
         G["MV3 extension<br/>60s alarm"]
         H["launchd agent<br/>900s interval"]
@@ -90,28 +104,24 @@ flowchart TD
         J["Bookmarks file<br/><b>next browser start</b>"]
     end
 
-    K["Bookmarks Bar<br/><i>your own nodes untouchable</i>"]
+    K["🔖 Bookmarks Bar<br/><i>your own nodes<br/>untouchable</i>"]
 
     A -->|"paged ASCENDING"| B
-    B -->|unchanged| Z
     B -->|"NEW / EDITED"| C
-    C --> C2
-    C2 --> D
+    C --> C2 --> D
     C --> D
-    D --> A
-    C --> E
-    E --> F
-    F --> G
-    F --> H
-    G -->|"chrome.bookmarks.create()"| I
-    H -->|"backup, atomic write, verify"| J
+    D -.->|"tags + collections"| A
+    C --> E --> F
+    F --> G --> I
+    F --> H --> J
     I --> K
     J --> K
 
-    style F fill:#fff4d6,stroke:#d9a406,stroke-width:2px
-    style K fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style C2 fill:#f3e5f5,stroke:#8a2be2,stroke-width:2px
-    style E fill:#ffebee,stroke:#c62828,stroke-width:2px
+    style F fill:#fff4d6,stroke:#d9a406,stroke-width:3px,color:#000
+    style K fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px,color:#000
+    style C2 fill:#f3e5f5,stroke:#8a2be2,stroke-width:2px,color:#000
+    style E fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    style A fill:#e3f2fd,stroke:#0b70ff,stroke-width:2px,color:#000
 ```
 
 <details>
