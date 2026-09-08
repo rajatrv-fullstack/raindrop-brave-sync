@@ -26,6 +26,7 @@
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square">
   <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib_only-green?style=flat-square">
   <a href="RESEARCH.md"><img alt="Research" src="https://img.shields.io/badge/RESEARCH.md-10_findings-8a2be2?style=flat-square"></a>
+  <a href="https://github.com/users/rajatrv-fullstack/projects/1"><img alt="Roadmap" src="https://img.shields.io/badge/roadmap-public_board-0969da?style=flat-square"></a>
 </p>
 
 
@@ -34,7 +35,8 @@
   <a href="SETUP.md">Setup</a> ·
   <a href="RESEARCH.md">Research</a> ·
   <a href="#design-principles">Principles</a> ·
-  <a href="#status-and-limitations">Limitations</a>
+  <a href="#status-and-limitations">Limitations</a> ·
+  <a href="https://github.com/users/rajatrv-fullstack/projects/1">Roadmap</a>
 </p>
 
 ---
@@ -399,6 +401,13 @@ what had to be discovered by experiment because no documentation says it, includ
 ---
 
 ## Contributing
+
+The [roadmap board](https://github.com/users/rajatrv-fullstack/projects/1) is the place to start. It has four columns: what is verified, what
+needs reproducing on another machine, where other browsers and operating systems need a hand,
+and what is planned. Pick anything from the middle two, run it on a throwaway profile, and
+report what you saw. A negative result is as useful as a positive one; the verification table
+in RESEARCH.md is updated either way. Questions go in
+[Discussions](https://github.com/rajatrv-fullstack/raindrop-brave-sync/discussions).
 
 Issues and pull requests are welcome. Two requests before you open one:
 
