@@ -28,6 +28,7 @@
   <a href="RESEARCH.md"><img alt="Research" src="https://img.shields.io/badge/RESEARCH.md-10_findings-8a2be2?style=flat-square"></a>
   <a href="https://github.com/users/rajatrv-fullstack/projects/1"><img alt="Roadmap" src="https://img.shields.io/badge/roadmap-public_board-0969da?style=flat-square"></a>
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki"><img alt="Wiki" src="https://img.shields.io/badge/wiki-13_pages-1f883d?style=flat-square"></a>
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/policy"><img alt="Security policy" src="https://img.shields.io/badge/security-policy_%2B_CodeQL-b60205?style=flat-square"></a>
 </p>
 
 
@@ -38,7 +39,8 @@
   <a href="#design-principles">Principles</a> ·
   <a href="#status-and-limitations">Limitations</a> ·
   <a href="https://github.com/users/rajatrv-fullstack/projects/1">Roadmap</a> ·
-  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki">Wiki</a>
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki">Wiki</a> ·
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/policy">Security</a>
 </p>
 
 ---
@@ -405,6 +407,14 @@ what had to be discovered by experiment because no documentation says it, includ
   same failure the timestamp watermark was rejected for, reached by a different route.
 
 ---
+
+## Security
+
+This tool writes into your browser profile and handles an API token, so the bar for a bug is
+low: nothing crashes, a library is quietly damaged or a credential quietly leaks. Read the
+[security policy](https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/policy) for what is in scope and report privately through
+[GitHub advisories](https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/advisories/new), never in a public issue. The repository runs
+secret scanning with push protection and CodeQL on every push.
 
 ## Contributing
 
