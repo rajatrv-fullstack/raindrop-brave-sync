@@ -27,6 +27,7 @@
   <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib_only-green?style=flat-square">
   <a href="RESEARCH.md"><img alt="Research" src="https://img.shields.io/badge/RESEARCH.md-10_findings-8a2be2?style=flat-square"></a>
   <a href="https://github.com/users/rajatrv-fullstack/projects/1"><img alt="Roadmap" src="https://img.shields.io/badge/roadmap-public_board-0969da?style=flat-square"></a>
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki"><img alt="Wiki" src="https://img.shields.io/badge/wiki-13_pages-1f883d?style=flat-square"></a>
 </p>
 
 
@@ -36,7 +37,8 @@
   <a href="RESEARCH.md">Research</a> ·
   <a href="#design-principles">Principles</a> ·
   <a href="#status-and-limitations">Limitations</a> ·
-  <a href="https://github.com/users/rajatrv-fullstack/projects/1">Roadmap</a>
+  <a href="https://github.com/users/rajatrv-fullstack/projects/1">Roadmap</a> ·
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki">Wiki</a>
 </p>
 
 ---
@@ -383,6 +385,10 @@ untested - it is the authoritative source for every claim above.
 ---
 
 ## Read the research
+
+The [wiki](https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki) goes one level deeper than this README: the architecture with a sequence
+diagram, the ledger and file formats, the taxonomy rules, the safety model, day-two operations,
+symptom-first troubleshooting, a glossary, an FAQ, and the verification status of every finding.
 
 **[RESEARCH.md](./RESEARCH.md)** is the reason many people will end up here. It is the record of
 what had to be discovered by experiment because no documentation says it, including:
