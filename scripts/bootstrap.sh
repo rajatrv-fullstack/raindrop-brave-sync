@@ -12,7 +12,7 @@ HOSTID="com.raindrop_sync.host"
 PY="${RAINDROP_SYNC_PYTHON:-/usr/bin/python3}"
 
 # Brave reads native-messaging manifests from CHROME's directory, not its own.
-# This is not a typo — see RESEARCH.md. A manifest in Brave's own directory is
+# This is not a typo - see RESEARCH.md. A manifest in Brave's own directory is
 # silently ignored and the extension reports "host not found".
 NMH_CHROME="${RAINDROP_SYNC_NMH_CHROME:-$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts}"
 NMH_BRAVE="${RAINDROP_SYNC_NMH_BRAVE:-$HOME/Library/Application Support/BraveSoftware/Brave-Browser/NativeMessagingHosts}"
@@ -42,7 +42,7 @@ say "  -> $SKILL_DEST/SKILL.md  (invoke with /raindrop-sync)"
 
 if [ ! -f "$ROOT/.env" ]; then
   cp "$REPO/.env.example" "$ROOT/.env"; chmod 600 "$ROOT/.env"
-  say "Created $ROOT/.env — add your Raindrop token (see SETUP.md)"
+  say "Created $ROOT/.env - add your Raindrop token (see SETUP.md)"
 fi
 
 # ── extension identity ──────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ sed -e "s#__PYTHON__#$PY#g" -e "s#__ROOT__#$ROOT#g" \
     "$REPO/launchd/com.raindrop-sync.apply.plist.template" > "$PLIST"
 plutil -lint "$PLIST" >/dev/null
 if [ "$SKIP_LAUNCHCTL" = "1" ]; then
-  say "  SKIP_LAUNCHCTL=1 — plist written but not loaded"
+  say "  SKIP_LAUNCHCTL=1 - plist written but not loaded"
 else
   launchctl unload "$PLIST" 2>/dev/null || true
   launchctl load "$PLIST"
@@ -118,7 +118,7 @@ cat <<DONE
         brave://extensions -> Developer mode -> Load unpacked
         -> $ROOT/extension
       Confirm the id reads: $EXT_ID
-      DO NOT pack a .crx — it permanently poisons the extension id. RESEARCH.md
+      DO NOT pack a .crx - it permanently poisons the extension id. RESEARCH.md
    3. Run the first classification pass to build YOUR taxonomy.
 
  Verify:

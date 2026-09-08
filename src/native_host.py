@@ -3,7 +3,7 @@
 Native messaging host for the Raindrop Sync Brave extension.
 
 Protocol: 4-byte native-order length prefix + UTF-8 JSON, on stdin/stdout.
-NOTHING may be written to stdout except protocol messages — a stray print corrupts the
+NOTHING may be written to stdout except protocol messages - a stray print corrupts the
 stream and Brave silently drops the connection. All diagnostics go to the log file.
 
 Ops:

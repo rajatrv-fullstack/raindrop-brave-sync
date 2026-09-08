@@ -1,10 +1,9 @@
 /**
- * Raindrop Sync — applies staged promotions into the RUNNING browser via chrome.bookmarks.
+ * Raindrop Sync - applies staged promotions into the RUNNING browser via chrome.bookmarks.
  *
  * Why this exists: Brave reads its Bookmarks file exactly once at startup and treats its
  * in-memory model as authoritative, so an external file write while Brave runs can be
- * silently discarded. Going through the bookmarks API writes to that model directly —
- * no file editing, no checksum, no race with Brave, visible immediately.
+ * silently discarded. Going through the bookmarks API writes to that model directly - * no file editing, no checksum, no race with Brave, visible immediately.
  *
  * Ownership: the API exposes no custom metadata field (unlike the file format's meta_info),
  * so ownership lives in the native host's ledger, keyed by raindrop_id. This worker never
@@ -12,7 +11,7 @@
  *
  * NOTE: several lifecycle events can fire within the same millisecond (worker load +
  * onInstalled). Without the lock below, each one independently sees the bookmark as absent
- * and creates it — which produced a real duplicate in testing. Every sync is serialized.
+ * and creates it - which produced a real duplicate in testing. Every sync is serialized.
  */
 const HOST = "com.raindrop_sync.host";
 /**
@@ -25,7 +24,7 @@ const PERIOD_MINUTES = 1;
 
 /**
  * Which browser this copy is running in. The native host keeps a separate applied-set per
- * client — without it, the first browser to sync would record the item and every other
+ * client - without it, the first browser to sync would record the item and every other
  * browser would be told nothing is pending, silently never receiving it.
  * Brave exposes navigator.brave; its user-agent deliberately says "Chrome".
  */
@@ -69,7 +68,7 @@ async function resolveFolder(pathStr) {
 
 /**
  * Remove a managed folder outright so it can be rebuilt. Only ever called for a folder the
- * host explicitly names AND that sits as a direct child of the bookmarks bar — never for the
+ * host explicitly names AND that sits as a direct child of the bookmarks bar - never for the
  * user's own curated folders. Any child that is itself a folder the user created inside it
  * would be destroyed, so the host only names folders this tool owns end to end.
  */

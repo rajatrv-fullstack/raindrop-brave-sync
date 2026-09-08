@@ -1,4 +1,4 @@
-# RESEARCH — undocumented behaviour in Chromium, Brave and the Raindrop API
+# RESEARCH - undocumented behaviour in Chromium, Brave and the Raindrop API
 
 Everything below was established by experiment on a real machine while building this project,
 not copied from documentation. Most of it is not written down anywhere else, and each item cost
@@ -51,13 +51,13 @@ hash the bytes, done.
 ### What actually happens
 
 It is an MD5 over a **pre-order walk of the node tree**, not over the file. No separators, no
-lengths, no field names, no JSON — just concatenated field bytes in a fixed order. And the
+lengths, no field names, no JSON - just concatenated field bytes in a fixed order. And the
 encoding is not uniform:
 
-* node `id` — UTF-8
-* node **`name` (title) — UTF-16LE**
-* the type literal, the ASCII string `"url"` or `"folder"` — UTF-8
-* for URL nodes, the `url` — UTF-8
+* node `id` - UTF-8
+* node **`name` (title) - UTF-16LE**
+* the type literal, the ASCII string `"url"` or `"folder"` - UTF-8
+* for URL nodes, the `url` - UTF-8
 * for folders, recurse into `children` in document order
 
 Only the title is UTF-16. This is the entire puzzle, and it is why every naive implementation
@@ -127,8 +127,7 @@ print("computed:", bookmark_checksum(doc))   # function above
 PY
 ```
 
-Round-tripping a torture set — emoji, an astral-plane character (U+1D54F), CJK and Devanagari —
-through both our writer and Brave's confirmed the encoding rule rather than merely not
+Round-tripping a torture set - emoji, an astral-plane character (U+1D54F), CJK and Devanagari - through both our writer and Brave's confirmed the encoding rule rather than merely not
 contradicting it.
 
 ### What it means for you
@@ -146,7 +145,7 @@ contradicting it.
 * **Pre-M152, a mismatch is expensive.** With the read side present, a checksum mismatch sets
   `required_recovery`, and recovery **renumbers every node in the tree**. Any state you keep
   keyed on Chromium's node `id` is invalidated in one shot. This is derived from the codec
-  source, not exercised here — M152 does not read the checksum, so it cannot be triggered on
+  source, not exercised here - M152 does not read the checksum, so it cannot be triggered on
   this build. It is the reason our design anchors identity on **GUIDs**, which survive recovery,
   and treats `id` as a per-file allocation detail.
 
@@ -176,8 +175,7 @@ lookup. It searches Google Chrome's directory:
 
 A manifest placed only in Brave's own directory is **silently ignored**. `connectNative()` fails
 in the extension with a generic "host not found" and no indication that the manifest was found
-but rejected, or that the wrong directory was searched. This cost four rounds of failed testing —
-each round spent debugging the host script, which was fine the whole time.
+but rejected, or that the wrong directory was searched. This cost four rounds of failed testing - each round spent debugging the host script, which was fine the whole time.
 
 The tell was on the machine already: other vendors' native-messaging installers ship the same
 manifest to **both** directories. That is not redundancy, it is the workaround.
@@ -214,7 +212,7 @@ location changed.
 * `--enable-logging=stderr --v=0` is the only practical window into native-messaging and
   extension plumbing. Learn it before you need it.
 * `allowed_origins` in the manifest must name the extension's origin, and the extension id is
-  per-install — see finding 3. Whenever the id changes, **every** copy of the manifest must be
+  per-install - see finding 3. Whenever the id changes, **every** copy of the manifest must be
   updated, or you get the same silent failure from a different cause.
 * Do not assume any Chromium fork uses its own product path for a given lookup. Brave overrides
   many paths; this is not one of them. Verify per feature, not per browser.
@@ -233,8 +231,8 @@ install. If the browser objects, flip the enable toggle once and move on.
 
 The install succeeds and the extension is dead on arrival, permanently.
 
-Registering a locally signed CRX does make Brave install it — `Preferences` records
-`location: 2` (`EXTERNAL_PREF`) — and then disables it with:
+Registering a locally signed CRX does make Brave install it - `Preferences` records
+`location: 2` (`EXTERNAL_PREF`) - and then disables it with:
 
 ```
 disable_reasons: [256]        // DISABLE_NOT_VERIFIED
@@ -250,7 +248,7 @@ The genuinely nasty part, and the reason this deserves a finding rather than a f
 > **The poison attaches to the extension id, not to the installation.**
 
 Remove the external registration entirely, then load the **same folder** as unpacked. The load
-*succeeds* — `Preferences` shows `location: 4` (`UNPACKED`) — and the extension **stays disabled
+*succeeds* - `Preferences` shows `location: 4` (`UNPACKED`) - and the extension **stays disabled
 and un-enableable**, because the `DISABLE_NOT_VERIFIED` flag is keyed on the id and was inherited.
 There is no UI, no flag and no profile edit that clears it.
 
@@ -258,7 +256,7 @@ The only escape is a **brand-new extension id**:
 
 1. regenerate the signing key (`key.pem`),
 2. update `manifest.json.key`,
-3. update `allowed_origins` in **every** native host manifest — all copies, see finding 2,
+3. update `allowed_origins` in **every** native host manifest - all copies, see finding 2,
 4. **Remove** the poisoned card at `brave://extensions`,
 5. **Load unpacked** again.
 
@@ -284,7 +282,7 @@ PY
 
 The sequence observed: `location: 2, disable_reasons: [256]` after the CRX registration; then,
 after removing the registration and loading the identical directory unpacked,
-`location: 4, disable_reasons: [256]` — location changed, disable reason did not. The toggle in
+`location: 4, disable_reasons: [256]` - location changed, disable reason did not. The toggle in
 the UI was greyed out throughout. A newly keyed id, loaded unpacked, came up enabled and stayed
 enabled.
 
@@ -309,7 +307,7 @@ shape is 32 lowercase letters a–p, e.g. `abcdefghijklmnopabcdefghijklmnop`, an
 
 ### The belief
 
-The `Bookmarks` file is the store. Edit it, and the browser picks the change up — immediately, or
+The `Bookmarks` file is the store. Edit it, and the browser picks the change up - immediately, or
 at worst after a reload.
 
 ### What actually happens
@@ -323,8 +321,8 @@ is Brave serialising its whole in-memory tree over the top, and it does so:
 
 Two consequences follow, and they point in opposite directions:
 
-* **An external edit made while Brave is running is invisible** — the model does not know about
-  it — **and is destroyed** by the next serialise, which writes a tree that never contained your
+* **An external edit made while Brave is running is invisible** - the model does not know about
+  it - **and is destroyed** by the next serialise, which writes a tree that never contained your
   nodes.
 * **An external edit made while Brave is closed is picked up in full** at the next start,
   because that is the one moment the file is read.
@@ -337,7 +335,7 @@ browser is running" sounds reckless and is not:
 * **Both writers are atomic.** Ours uses `os.replace`; Chromium's `ImportantFileWriter` writes a
   temp file and renames. A rename on the same volume is atomic, so the file is never torn. One
   version wins whole.
-* **The user's bookmarks are not on disk in any meaningful sense** while Brave runs — they are in
+* **The user's bookmarks are not on disk in any meaningful sense** while Brave runs - they are in
   Brave's in-memory model, which is the thing that gets written out. Losing the race cannot
   delete a user bookmark, because the loser's content was never the source of that data.
 * **The only casualty is your own pending additions**, which you can simply re-apply.
@@ -345,7 +343,7 @@ browser is running" sounds reckless and is not:
 So a retry loop converges. Write regardless of Brave's state; on the next tick, re-read the file
 and check whether your marked nodes are present; if not, write again. The write sticks the moment
 Brave has a quiet tick, and it is *guaranteed* to stick once Brave restarts, because that is when
-Brave reads your file. **Never kill Brave to win the race** — quitting Brave triggers the
+Brave reads your file. **Never kill Brave to win the race** - quitting Brave triggers the
 shutdown serialise, which is the very thing that would discard your write, and it is hostile to
 the user besides.
 
@@ -358,7 +356,7 @@ Throwaway-profile method (section 12), in two passes:
 
 1. **File survives load.** Copy the profile, inject nodes into `Bookmarks`, launch
    `Brave --user-data-dir=<copy>`, quit, diff. Result: the file was byte-identical after Brave
-   ran — 0 GUIDs vanished, 0 ids changed, 0 names changed, `required_recovery` never fired.
+   ran - 0 GUIDs vanished, 0 ids changed, 0 names changed, `required_recovery` never fired.
    That proves Brave accepted an externally authored file, but not that the nodes reached the
    model rather than being passed through.
 2. **Nodes are in the model, and survive Brave's own rewrite.** Repeat with a probe extension
@@ -397,7 +395,7 @@ back.
 
 `Bookmarks.bak` is a copy of **whatever was on disk at the first save of the current browser
 session**, taken once per session behind a latch (`backup_triggered_`). It is not a rolling
-history and not a validity check — Chromium never inspects the file it is copying.
+history and not a validity check - Chromium never inspects the file it is copying.
 
 The failure sequence is short:
 
@@ -407,7 +405,7 @@ The failure sequence is short:
 3. The previous good copy is gone. One session is all it takes.
 
 And nothing in Chromium ever reads `.bak` back. There is **no restore-from-backup path in the
-product** — not automatic, not behind a flag, not in the UI. The file exists for a human with a
+product** - not automatic, not behind a flag, not in the UI. The file exists for a human with a
 terminal, and only until step 2.
 
 ### How it was verified
@@ -434,7 +432,7 @@ compare.
 
 ### The belief
 
-If you write a broken bookmarks file, the browser will complain — an error dialog, a "your
+If you write a broken bookmarks file, the browser will complain - an error dialog, a "your
 bookmarks could not be loaded" bar, a fallback to the backup, something.
 
 ### What actually happens
@@ -466,14 +464,14 @@ Never a real one.
 
 These are the preflight and postflight checks that make writing this file defensible.
 
-**Preflight — abort on any of these, do not "repair":**
+**Preflight - abort on any of these, do not "repair":**
 
 * `Bookmarks` missing while the profile is otherwise populated → abort and alert.
   **Never create a fresh file.** A missing file is a symptom, and writing a new one is
   indistinguishable from the wipe you are trying to prevent.
 * `version != 1`, or any of `bookmark_bar` / `other` / `synced` missing.
 * Recomputed MD5 does not match the stored `checksum` → something else is editing; refuse.
-* `AccountBookmarks`, `EncryptedBookmarks2` or `EncryptedAccountBookmarks2` present — a different
+* `AccountBookmarks`, `EncryptedBookmarks2` or `EncryptedAccountBookmarks2` present - a different
   storage regime you are not modelling.
 * Top-level `sync_metadata` present → browser sync is on. Injected nodes then trip
   `CorruptionReason::UNTRACKED_BOOKMARK`, all sync metadata is discarded, a full re-merge
@@ -490,7 +488,7 @@ mkstemp in the profile directory (same volume, so rename is atomic)
   → unlink the temp file on any exception
 ```
 
-**Postflight — re-read from disk and verify, every time:**
+**Postflight - re-read from disk and verify, every time:**
 
 * it parses,
 * the checksum recomputes,
@@ -498,19 +496,18 @@ mkstemp in the profile directory (same volume, so rename is atomic)
 * `guid` values are unique.
 
 On any failure, restore your backup atomically and exit non-zero. Do **not** restore merely
-because the browser is running — losing that race costs only your own additions (finding 4), and
+because the browser is running - losing that race costs only your own additions (finding 4), and
 restoring would undo the user's real work.
 
 **Ownership by marker, not by folder.** Every node this project creates carries
 `meta_info: {"raindrop_sync": "v1"}`, and the writer may only add or remove **marked** nodes.
 Unmarked nodes are untouchable by construction, which is what makes it safe to place generated
 bookmarks inside the user's real hand-curated folders instead of quarantining them in one
-"synced" folder. When rebuilding a folder, harvest and re-attach its **unmarked** children —
-users will drop their own bookmarks in there. Zero marker matches means create; more than one
+"synced" folder. When rebuilding a folder, harvest and re-attach its **unmarked** children - users will drop their own bookmarks in there. Zero marker matches means create; more than one
 means abort and let a human look.
 
 Verified as part of this work: `meta_info` survives Brave's own round-trip, 7 of 7 nodes. That is
-the load-bearing assumption for marker ownership — re-verify it after major Brave upgrades.
+the load-bearing assumption for marker ownership - re-verify it after major Brave upgrades.
 
 ---
 
@@ -524,14 +521,14 @@ Incremental sync is a watermark: remember the timestamp of the last run, ask for
 ### What actually happens
 
 Raindrop bumps `lastUpdate` on **every** write to an item, including writes made by your own
-sync. If your job writes anything back — a collection assignment, a tag — then every item it
+sync. If your job writes anything back - a collection assignment, a tag - then every item it
 touched is "modified" as of that instant. The next run's watermark query returns everything you
 just wrote. And since that run writes again, it re-poisons the watermark. **The watermark
 re-selects the entire library, forever.** There is no run at which it settles.
 
 There is also no server-side operator that rescues it. The documented search operator table
 supports `<` and `>` on `created:` and pointedly **not** on `lastUpdate:`, and the date operators
-are day-granular at best — so even a working operator could not express an intra-day delta. That
+are day-granular at best - so even a working operator could not express an intra-day delta. That
 path is not a future optimisation; delete it rather than carrying it.
 
 ### The fix: a content hash
@@ -553,14 +550,14 @@ downstream.** Crash between the two and you pay one redundant reclassification. 
 way and you get a silent skip, which is unrecoverable because nothing will ever flag that item
 again.
 
-### The second-order trap — hash RAW values, not curated ones
+### The second-order trap - hash RAW values, not curated ones
 
 This is the expensive part, and it is a trap you can fall into *after* you have correctly
 rejected the timestamp watermark.
 
 The first run of this system wrote **curated** values into the ledger's `title` and `link`
-columns — emoji stripped, over-long blurbs shortened, HTML entities decoded, tracking parameters
-removed — and then hashed **those**. Everything looked fine.
+columns - emoji stripped, over-long blurbs shortened, HTML entities decoded, tracking parameters
+removed - and then hashed **those**. Everything looked fine.
 
 On the next run, **168 items (about 28% of the library) re-flagged as EDITED**, and would have
 done so on every run forever. The reason is simple once seen: a hash of an edited record cannot
@@ -572,7 +569,7 @@ The invariant, which requires two columns that **intentionally disagree**:
 
 | column | holds | used for |
 |---|---|---|
-| `content_hash` | `sha256(raw_link\|raw_title\|...)` — verbatim source values | delta detection **only** |
+| `content_hash` | `sha256(raw_link\|raw_title\|...)` - verbatim source values | delta detection **only** |
 | `title`, `link` | the curated display values | naming in the browser, staged output, human reading |
 
 Never "repair" these into agreement. A future maintainer looking at a ledger row whose `title`
@@ -586,7 +583,7 @@ Two corollaries:
   hash is invalidated at once and the entire library re-classifies. That is a
   `taxonomy_version`-class operation and must be explicit and user-invoked, never a silent
   upgrade shipped in a nightly job. (Our hash keeps `excerpt|note|type` slots present but always
-  empty, because the classifier's data source does not return them — the format is stable even
+  empty, because the classifier's data source does not return them - the format is stable even
   though the fields are unused.)
 * **A missing API token degrades reconciliation, not hashing.** Twice during this project it was
   concluded that the hash could not be computed because a richer API surface was unavailable.
@@ -599,12 +596,11 @@ Two corollaries:
 
 * **Gate cheaply:** `GET /rest/v1/user/stats` → `meta.changedBookmarksDate`. Unchanged since last
   run → exit without reading the library.
-* **Then one call:** `GET /rest/v1/raindrops/0/export.csv`. It is an atomic server-side render —
-  cheaper than paging and immune to the paging race below.
+* **Then one call:** `GET /rest/v1/raindrops/0/export.csv`. It is an atomic server-side render - cheaper than paging and immune to the paging race below.
 * **If you must page, page ASCENDING** (`sort=created`). Newest-first paging shifts the window
   when a bookmark is saved mid-run, so an item silently falls between pages. Deletion logic then
   reads that absence as a deletion, and you have invented a delete that never happened.
-* **Add a max-staleness override** — force a full read every N days (we use 7) regardless of the
+* **Add a max-staleness override** - force a full read every N days (we use 7) regardless of the
   gate. Nothing documents which mutations advance `changedBookmarksDate`, so do not let a
   zero-call fast path be your only path.
 
@@ -618,7 +614,7 @@ test it first with a single tag edit.
   "correction" silently accumulates both the old and the new tag.
 * **Writes with `collectionId 0` are rejected.**
 * **`/raindrop/{id}/suggest` is Pro-gated.** It is tempting as a free classification tier; it is
-  not available on a free plan (expect 402/403 — one curl confirms it for your account, and this
+  not available on a free plan (expect 402/403 - one curl confirms it for your account, and this
   particular check remains untested here). Its sibling, semantic search, already hard-errors on a
   free account.
 
@@ -646,7 +642,7 @@ existence check, both saw the bookmark absent, both called `chrome.bookmarks.cre
 Two identical bookmarks appeared in the bar.
 
 An existence check is not idempotence when two copies of it interleave. `chrome.bookmarks` gives
-you no uniqueness constraint, no upsert and no transaction — nothing stops the second create.
+you no uniqueness constraint, no upsert and no transaction - nothing stops the second create.
 
 ### How it was verified
 
@@ -666,7 +662,7 @@ one bookmark, no duplicate, checksum intact.
 Funnel every sync through a single promise chain, at module scope in the worker:
 
 ```js
-// sw.js — do not remove this lock.
+// sw.js - do not remove this lock.
 let chain = Promise.resolve();
 const next = chain.then(fn, fn);
   chain = next.catch(() => {});
@@ -679,7 +675,7 @@ chrome.alarms.onAlarm.addListener(()      => serialize(syncOnce));
 serialize(syncOnce);                                  // top-level worker load
 ```
 
-Note `chain.then(fn, fn)` — the second argument runs the next task even if the previous one rejected, and the separate `.catch` keeps the chain itself alive while still surfacing the rejection to the caller, so one
+Note `chain.then(fn, fn)` - the second argument runs the next task even if the previous one rejected, and the separate `.catch` keeps the chain itself alive while still surfacing the rejection to the caller, so one
 failed sync does not wedge every future one.
 
 ### What it means for you
@@ -687,7 +683,7 @@ failed sync does not wedge every future one.
 * **In MV3, treat every entry point as concurrent**: top-level worker code, `onInstalled`,
   `onStartup`, `onAlarm`, `onConnect`, `onMessage`. They are not ordered relative to each other.
 * The promise chain protects you *within* a worker instance. MV3 kills idle workers, so it does
-  not protect across restarts — cross-instance safety has to come from an idempotent existence
+  not protect across restarts - cross-instance safety has to come from an idempotent existence
   check plus a durable ledger outside the browser (see finding 9).
 * Do not "fix" duplicates by adding a delay. You will move the race, not close it.
 
@@ -698,7 +694,7 @@ failed sync does not wedge every future one.
 ### The belief
 
 The extension API is a view onto the same data as the `Bookmarks` file, so anything the file
-format can express — in particular the per-node `meta_info` dictionary — is reachable from
+format can express - in particular the per-node `meta_info` dictionary - is reachable from
 `chrome.bookmarks`.
 
 ### What actually happens
@@ -709,8 +705,8 @@ no API for writing the file format's `meta_info`. An extension cannot stamp its 
 cannot read a stamp written into the file by anything else.
 
 This matters far more than it looks, because it breaks the obvious architecture for a hybrid
-system. This project has two appliers — an extension that writes into the running browser, and a
-file writer that runs on a timer as a fallback — and **they cannot share an ownership marker**:
+system. This project has two appliers - an extension that writes into the running browser, and a
+file writer that runs on a timer as a fallback - and **they cannot share an ownership marker**:
 
 * the file writer marks nodes `meta_info: {"raindrop_sync": "v1"}`;
 * the extension physically cannot;
@@ -724,8 +720,7 @@ file writer that runs on a timer as a fallback — and **they cannot share an ow
 * **The file writer must additionally match on URL**, not only on marker/GUID, or it duplicates
   everything the extension already applied.
 * **Key that ledger by `(client, source_id)`, not by `source_id` alone.** With a bare id key, the
-  first browser to sync an item records it, and every other browser is told nothing is pending —
-  so the item silently never arrives anywhere else. The worker has to report which browser it is.
+  first browser to sync an item records it, and every other browser is told nothing is pending - so the item silently never arrives anywhere else. The worker has to report which browser it is.
 * **Detect Brave with `"brave" in navigator`.** Brave's user agent deliberately claims Chrome, so
   UA sniffing gets this wrong by design.
 * Make the client key degrade safely: a service worker still running older code sends no client
@@ -734,19 +729,19 @@ file writer that runs on a timer as a fallback — and **they cannot share an ow
 
 The mirror-image fact, verified here: `meta_info` written into the file **does** survive Brave's
 own round-trip (7 of 7 nodes). So marker ownership is viable for a file writer, just not shareable
-with an extension. Re-verify after major Brave upgrades — the whole ownership model rests on it.
+with an extension. Re-verify after major Brave upgrades - the whole ownership model rests on it.
 
 ---
 
 ## 10. Safari is not possible
 
 Stated plainly so nobody repeats the search: **there is no supported or unsupported programmatic
-route to add a bookmark to Safari on macOS 26.** Not "difficult" — absent. Every avenue was
+route to add a bookmark to Safari on macOS 26.** Not "difficult" - absent. Every avenue was
 checked and every one is closed:
 
 | Route | Result |
 |---|---|
-| `browser.bookmarks` in a Safari Web Extension | Compile-gated out of WebKit trunk and **absent from all six shipped dyld subcaches** — the symbol is not in the binary you have |
+| `browser.bookmarks` in a Safari Web Extension | Compile-gated out of WebKit trunk and **absent from all six shipped dyld subcaches** - the symbol is not in the binary you have |
 | AppleScript | No bookmark class; the terminology will not compile (errors **-2741 / -2740**) |
 | Shortcuts | No bookmark action exists |
 | URL scheme | None |
@@ -755,8 +750,7 @@ checked and every one is closed:
 | Direct plist write | Guarded by `CloudBookmarkDatabaseLockArbiter` against an iCloud-backed store that fans out to every Apple device |
 
 That last row is the one to take seriously even if you find a way around the lock: Safari's
-bookmark store is iCloud-backed, so a successful write behind Safari's back does not stay local —
-it propagates to every device on the account.
+bookmark store is iCloud-backed, so a successful write behind Safari's back does not stay local - it propagates to every device on the account.
 
 The single escape hatch, for a human doing something deliberate: emit a
 `NETSCAPE-Bookmark-file-1` HTML file and import it by hand via **Safari → File → Import From**.
@@ -773,8 +767,7 @@ Symbol search across the shipped dyld shared-cache subcaches for the WebExtensio
 API; attempting to compile AppleScript bookmark terminology and recording the compiler errors;
 enumerating Shortcuts' available Safari actions; enumerating `safaridriver`'s endpoints; checking
 whether `profiles` can still install a configuration profile on this OS version. Each result was
-then put through an adversarial refutation pass — an explicit attempt to find a counter-example —
-and all of them survived it.
+then put through an adversarial refutation pass - an explicit attempt to find a counter-example - and all of them survived it.
 
 ---
 
@@ -784,7 +777,7 @@ Collected because each one costs an hour to rediscover.
 
 * **`chrome.alarms` clamps to a one-minute floor.** A `periodInMinutes` below 1 does not give you
   faster polling. Genuinely instant delivery needs a long-lived `chrome.runtime.connectNative`
-  port so the host can push — which MV3 fights, because it kills idle workers and the port must be
+  port so the host can push - which MV3 fights, because it kills idle workers and the port must be
   re-established. One minute is usually below the threshold anyone notices.
 * **Unpacked extensions do not auto-reload on file change.** After editing the service worker you
   must bump `manifest.json`'s `version` **and** press reload on the extension card. Editing the
@@ -803,11 +796,11 @@ Collected because each one costs an hour to rediscover.
   stdin, so the secret never appears in `argv` where `ps` can see it.
 * **A stored secret with a label line will silently double your HTTP calls.** A note whose body
   was a label line followed by the token, piped through `xargs`, produced two `curl`
-  invocations — a malformed one that 401'd and a correct one that 200'd. Because the second
+  invocations - a malformed one that 401'd and a correct one that 200'd. Because the second
   succeeded, it *looked* like it worked. Normalise retrieved secrets to exactly the value.
 * **Separator drift in a path-keyed column is a landmine.** Two runs of the same code wrote
   `Parent / Child` and `Parent/Child` into the same ledger column. Nothing broke, because every
-  current reader keys on something else — but an exact `map[row["collection"]]` lookup added later
+  current reader keys on something else - but an exact `map[row["collection"]]` lookup added later
   would silently miss most of the library. Normalise on read
   (`" / ".join(p.strip() for p in s.split("/"))`) and treat the repair as an explicit data
   migration, not a silent fixup inside a nightly job.
@@ -832,8 +825,7 @@ cp "$LAB/Default/Bookmarks" /tmp/Bookmarks.before
 
 # 2. Run your writer against the copy (see "parameterise your paths" below).
 
-# 3. Launch Brave on the copy, with logging. Quit it from the menu when done —
-#    the quit-time save is part of what you are testing, so do not SIGKILL it.
+# 3. Launch Brave on the copy, with logging. Quit it from the menu when done - #    the quit-time save is part of what you are testing, so do not SIGKILL it.
 "$BRAVE" --user-data-dir="$LAB" --enable-logging=stderr --v=0 about:blank
 
 # 4. Diff on normalised JSON.
@@ -844,7 +836,7 @@ diff <(python3 -m json.tool /tmp/Bookmarks.before) \
 ### The rules that made it work
 
 1. **Parameterise every path in your writer** so the identical code runs against the lab and
-   against production — environment variables for the profile directory and the state directory.
+   against production - environment variables for the profile directory and the state directory.
    This is not just hygiene: it is what let a dry run against a copy catch a folder-resolution bug
    that would have built an entire **duplicate nested tree** beside the user's real folders,
    because a leading `Bookmarks Bar` path component was being treated as a folder to create rather
@@ -871,7 +863,7 @@ diff <(python3 -m json.tool /tmp/Bookmarks.before) \
    plumbing. `launch_context.cc` lines are where native-messaging failures actually explain
    themselves.
 
-5. **Read `Preferences` directly** for extension state — `location`, `disable_reasons`,
+5. **Read `Preferences` directly** for extension state - `location`, `disable_reasons`,
    `install_signature.ids`. The `brave://extensions` UI hides exactly the fields you need.
 
 6. **Run the experiment twice**: once with the browser closed for the whole run, once with it
@@ -886,25 +878,25 @@ Nothing here is asserted beyond what was actually established. This table is the
 
 | # | Finding | Status |
 |---|---|---|
-| 1 | Checksum walk, title as UTF-16LE | **Verified both directions** — our implementation reproduces Brave's digest, and Brave accepts ours |
+| 1 | Checksum walk, title as UTF-16LE | **Verified both directions** - our implementation reproduces Brave's digest, and Brave accepts ours |
 | 1a | Brave 152 does not read the checksum | From the Chromium CL that removed the read side; consistent with observed behaviour |
-| 1b | Pre-M152 mismatch triggers `required_recovery` and renumbers every node | **From source only** — cannot be triggered on M152, which does not read the checksum |
-| 2 | Native-messaging manifests are read from Chrome's directory | **Verified** — single-variable experiment, confirmed by the `launch_context.cc` log line |
-| 3 | CRX install yields `DISABLE_NOT_VERIFIED` (256), and the flag is inherited by an unpacked reload of the same id | **Verified** — observed in `Preferences` and in the greyed-out toggle; escaped only by minting a new id |
-| 4 | File read once at startup; whole tree re-serialised ~2.5 s after a change and at quit | **Verified** for load, survival and Brave's own rewrite (probe extension). The exact debounce constant is a Chromium internal — do not depend on the number |
-| 5 | `.bak` is overwritten by your file on the first save of the next session; nothing ever reads it back | **From source, adopted as a constraint** — not deliberately reproduced |
-| 6 | Malformed file → empty permanent nodes, UMA only, no dialog, no restore | **From source, designed against** — deliberately not reproduced on a populated profile |
+| 1b | Pre-M152 mismatch triggers `required_recovery` and renumbers every node | **From source only** - cannot be triggered on M152, which does not read the checksum |
+| 2 | Native-messaging manifests are read from Chrome's directory | **Verified** - single-variable experiment, confirmed by the `launch_context.cc` log line |
+| 3 | CRX install yields `DISABLE_NOT_VERIFIED` (256), and the flag is inherited by an unpacked reload of the same id | **Verified** - observed in `Preferences` and in the greyed-out toggle; escaped only by minting a new id |
+| 4 | File read once at startup; whole tree re-serialised ~2.5 s after a change and at quit | **Verified** for load, survival and Brave's own rewrite (probe extension). The exact debounce constant is a Chromium internal - do not depend on the number |
+| 5 | `.bak` is overwritten by your file on the first save of the next session; nothing ever reads it back | **From source, adopted as a constraint** - not deliberately reproduced |
+| 6 | Malformed file → empty permanent nodes, UMA only, no dialog, no restore | **From source, designed against** - deliberately not reproduced on a populated profile |
 | 7 | `lastUpdate` bumps on your own writes, so a watermark never settles | Established as a design constraint; the content-hash ledger has run cleanly against it |
-| 7a | Hashing curated values re-flags items forever | **Verified the hard way** — 168 items (~28% of the library) re-flagged on the following run; fixed, then re-validated against 139 known-good rows with 0 mismatches, and a full sweep showing 0 drift and 0 orphans in either direction |
-| 7b | Whether a tag-only edit advances `changedBookmarksDate` | **UNTESTED** — this project does a full read until it is confirmed |
+| 7a | Hashing curated values re-flags items forever | **Verified the hard way** - 168 items (~28% of the library) re-flagged on the following run; fixed, then re-validated against 139 known-good rows with 0 mismatches, and a full sweep showing 0 drift and 0 orphans in either direction |
+| 7b | Whether a tag-only edit advances `changedBookmarksDate` | **UNTESTED** - this project does a full read until it is confirmed |
 | 7c | `/raindrop/{id}/suggest` is Pro-gated | Documented as plan-gated; the confirming request (expect 402/403 on a free plan) is **UNTESTED** here |
-| 8 | Worker load and `onInstalled` race, producing duplicates | **Verified** — real duplicates observed, then eliminated by the promise chain |
+| 8 | Worker load and `onInstalled` race, producing duplicates | **Verified** - real duplicates observed, then eliminated by the promise chain |
 | 9 | `chrome.bookmarks` exposes no custom metadata | **Verified** by API surface and by consequence (the file writer had to match on URL) |
 | 9a | `meta_info` survives Brave's round-trip | **Verified**, 7 of 7 nodes |
 | 10 | Safari has no programmatic bookmark route | **Verified across seven independent avenues**, then adversarially refuted and unchanged |
 
 Two rules of thumb, if you take nothing else from this document. First: for the browser's
-bookmark file, **your own verification is the only error surface that exists** — nothing will
+bookmark file, **your own verification is the only error surface that exists** - nothing will
 tell you that you broke it. Second: for the sync ledger, **hash raw source values, never your own
 cleaned-up ones**, or you will re-process your entire library every night and it will look like
 the API's fault.

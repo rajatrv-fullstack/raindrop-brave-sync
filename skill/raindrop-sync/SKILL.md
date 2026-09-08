@@ -1,12 +1,12 @@
 ---
 name: raindrop-sync
-description: Incremental sync of a Raindrop.io bookmark library — classify new and changed items into a pinned taxonomy, write collections and tags back to Raindrop, and stage them for the browser bookmarks bar. Triggers on 'raindrop sync', 'sync bookmarks', 'classify new bookmarks', 'bookmark sync', 'sort my bookmarks'. Read-only on the browser's Bookmarks file — an extension and a launchd agent do the writing.
+description: Incremental sync of a Raindrop.io bookmark library - classify new and changed items into a pinned taxonomy, write collections and tags back to Raindrop, and stage them for the browser bookmarks bar. Triggers on 'raindrop sync', 'sync bookmarks', 'classify new bookmarks', 'bookmark sync', 'sort my bookmarks'. Read-only on the browser's Bookmarks file - an extension and a launchd agent do the writing.
 ---
 
 # Raindrop → browser sync (Phase A: classify)
 
 Phase A is this skill: network and LLM work. It touches **no browser file**.
-Phase B applies `desired.json` into the browser — an unpacked extension via `chrome.bookmarks`,
+Phase B applies `desired.json` into the browser - an unpacked extension via `chrome.bookmarks`,
 with `com.raindrop-sync.apply` (launchd) as a fallback. Never write the browser's Bookmarks
 file from here.
 
@@ -29,7 +29,7 @@ same bookmarks under different names every night, so the bookmarks bar is perman
 even when every individual write is correct. Re-derivation is a separate, explicitly requested
 operation that bumps `meta.taxonomy_version` and reclassifies everything.
 
-Extending the tree with a NEW collection is not re-deriving, and is allowed — see rule 3.
+Extending the tree with a NEW collection is not re-deriving, and is allowed - see rule 3.
 
 ### 2. Delta on content hash, never on a timestamp
 
@@ -41,7 +41,7 @@ watermark re-selects the entire library on every subsequent run, forever.
 
 Hash the **raw source values**, never curated ones. If the ledger stores a cleaned title or a
 URL with tracking parameters stripped, and the hash is computed from those, the hash can never
-be reproduced from the API response — and every affected item re-flags as EDITED on every run.
+be reproduced from the API response - and every affected item re-flags as EDITED on every run.
 The ledger's `title`/`link` columns and its `content_hash` are allowed to disagree; that is the
 design, not a defect to repair.
 
@@ -51,15 +51,15 @@ one redundant reclassification rather than a silent skip.
 ### 3. Nothing is noise. There is no bin.
 
 Every bookmark in the library was a deliberate act. A URL carrying an advertising click-id, or
-arriving through a link shortener, tells you **how it got there** — never whether it matters.
+arriving through a link shortener, tells you **how it got there** - never whether it matters.
 Judge the destination and the interest it reveals.
 
 - `Noise`, `Junk`, `Misc`, `Other`, `Various`, `Uncategorised` are forbidden collection names.
   So is any catch-all that quietly becomes a bin under a friendlier name.
 - **When nothing fits, create a new collection.** That is the correct outcome, not a fallback.
   Say what was added in the run summary.
-- A dead link or an unreadable slug title is a research problem — follow the redirect, try the
-  Wayback Machine, establish what it pointed at — not grounds for discarding it.
+- A dead link or an unreadable slug title is a research problem - follow the redirect, try the
+  Wayback Machine, establish what it pointed at - not grounds for discarding it.
 - Keep provenance tags (`paid-ad`, `short-link`) as facts. They must never drive placement.
 - Assume the library spans many unrelated interests, not one professional domain. Design for the
   next five hundred saves, not for a tidy-looking tree today.
@@ -83,11 +83,10 @@ missing from a read is far more likely to be a paging race than a real removal.
    tags from the taxonomy's controlled vocabulary. Nothing outside those vocabularies, except a
    new collection created under rule 3.
 5. Write back with `update_bookmarks`, grouped by (collection, tagset); at most 150 bookmark ids
-   per call. Tags use `{"add": [...]}`, which appends — read-modify-write to replace.
+   per call. Tags use `{"add": [...]}`, which appends - read-modify-write to replace.
    You cannot `add` and `remove` tags in one operation; the API rejects it. Split them.
 6. Append to `desired.json` as `{source_id, name, url, folder_path}`, with `folder_path`
-   relative to the bookmarks bar, e.g. `Raindrop/<Top Level Collection>`. Keep it **flat** —
-   one level. Hover menus make every extra level of nesting a tax on the reader.
+   relative to the bookmarks bar, e.g. `Raindrop/<Top Level Collection>`. Keep it **flat** - one level. Hover menus make every extra level of nesting a tax on the reader.
 7. Update the ledger and insert a row into `runs`.
 8. Do not write the browser's Bookmarks file. Phase B applies within about a minute.
 
@@ -104,7 +103,7 @@ quietly degrades something a person built by hand.
 
 ## Secrets
 
-The API token lives in the keychain or `.env` (mode 0600). **Never echo it** — not to stdout,
+The API token lives in the keychain or `.env` (mode 0600). **Never echo it** - not to stdout,
 not into a variable you later print, not while probing which field holds it. Pipe it:
 
 ```bash

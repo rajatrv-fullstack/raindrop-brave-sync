@@ -37,20 +37,19 @@ RAINDROP_SYNC_LAUNCHAGENTS=/tmp/agents \
 SKIP_LAUNCHCTL=1 bash scripts/bootstrap.sh
 ```
 
-This is not optional politeness — a bug in the writer silently destroys a bookmark library, and
+This is not optional politeness - a bug in the writer silently destroys a bookmark library, and
 Chromium has no restore path. See finding 6.
 
 ## Code
 
 - Python: stdlib only. No dependencies is a feature; keep it.
 - Shell: `bash -n` clean, `set -euo pipefail`.
-- The extension: plain MV3, no build step. Bump `manifest.json` version when `sw.js` changes —
-  unpacked extensions do not hot-reload, and a stale worker is an afternoon of confusion.
+- The extension: plain MV3, no build step. Bump `manifest.json` version when `sw.js` changes - unpacked extensions do not hot-reload, and a stale worker is an afternoon of confusion.
 
 ## Things that will be declined
 
 - **Anything that deletes.** Additive-only is the design, not an oversight.
-- **A catch-all category.** "Misc", "Other", "Uncategorised" — see the first design principle.
+- **A catch-all category.** "Misc", "Other", "Uncategorised" - see the first design principle.
   If the classifier cannot place something, that is information about a gap in the taxonomy.
 - **Safari support.** Seven independent avenues are closed. See RESEARCH.md before spending an
   evening on it.
