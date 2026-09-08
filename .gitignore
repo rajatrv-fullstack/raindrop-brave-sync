@@ -1,0 +1,37 @@
+# ── Never commit anything below. These are per-install and/or private. ──
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+key.pem*
+.extension-identity.json
+
+# Your library, your bookmarks, your activity
+state.db
+state.db.*
+desired.json
+applied.json
+reset_folders.json
+taxonomy.json
+collection-map.json
+vendor-allowlist.json
+backups/
+log/
+*.log
+
+# Browser artifacts
+Bookmarks
+Bookmarks.bak
+*.crx
+
+# Local resolved paths
+.python-path
+launchd/*.local.plist
+
+# OS / editor
+.DS_Store
+__pycache__/
+*.pyc
+.venv/

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Raindrop Sync",
+  "version": "1.0.0",
+  "description": "Applies classified Raindrop bookmarks into Brave through the bookmarks API, with no file surgery.",
+  "permissions": [
+    "bookmarks",
+    "nativeMessaging",
+    "alarms",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "sw.js"
+  }
+}
