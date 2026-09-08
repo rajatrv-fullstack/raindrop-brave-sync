@@ -1,4 +1,34 @@
-# raindrop-brave-sync
+<h1 align="center">raindrop-brave-sync</h1>
+
+<p align="center">
+  <em>An LLM reads your bookmark library, works out what each save was actually about,<br>
+  and files it — into Raindrop and into your browser bar.</em>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue.svg"></a>
+  <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-lightgrey.svg">
+  <img alt="Brave" src="https://img.shields.io/badge/browser-Brave%20%2F%20Chromium-orange.svg">
+  <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib%20only-green.svg">
+  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen.svg">
+  <a href="RESEARCH.md"><img alt="Research" src="https://img.shields.io/badge/RESEARCH.md-10%20findings-8a2be2.svg"></a>
+</p>
+
+<p align="center">
+  <a href="#architecture">Architecture</a> ·
+  <a href="SETUP.md">Setup</a> ·
+  <a href="RESEARCH.md">Research</a> ·
+  <a href="#design-principles">Principles</a> ·
+  <a href="#status-and-limitations">Limitations</a>
+</p>
+
+---
+
+> **If you only read one file, read [RESEARCH.md](RESEARCH.md).**
+> Chromium hashes bookmark titles as UTF-16LE while every other field is UTF-8. Brave reads
+> native-messaging manifests from *Chrome's* directory, not its own. Packing a `.crx`
+> permanently poisons your extension id. None of this is documented anywhere else, and each
+> one cost hours to find.
 
 **An LLM reads your [Raindrop.io](https://raindrop.io) library, files every bookmark into a
 pinned taxonomy, and mirrors the results into Brave's bookmarks bar.** Classification writes
@@ -7,8 +37,9 @@ for the browser. With the extension installed, a staged change lands in the runn
 within about a minute; without it, a launchd agent rewrites Brave's bookmarks file and the
 change appears at the next Brave start.
 
-It is deliberately additive. Nothing this system runs will ever delete a bookmark you made or
-touch a folder you curated by hand.
+It is deliberately additive. Nothing it runs will ever delete a bookmark you made. It *can* add
+into a folder you curated — that is the point — but only nodes it created and marked as its own.
+It will never move, rename or remove anything you put there yourself.
 
 ---
 
@@ -35,6 +66,56 @@ creates, verified to survive Brave's own round-trip — is most of the engineeri
 
 Two phases, deliberately split. Phase A does network and LLM work and never touches a browser
 file. Phase B touches the browser and never touches the network.
+
+```mermaid
+flowchart TD
+    subgraph PA ["PHASE A · classify — network + LLM, never touches a browser file"]
+        direction TB
+        A["Raindrop.io library"]
+        B{"delta vs ledger<br/>sha256 over RAW link + title"}
+        Z["exit — no work"]
+        C["LLM classifies the delta<br/>into the PINNED taxonomy"]
+        C2["nothing fits?<br/><b>create a collection</b><br/><i>never a bin</i>"]
+        D["write back<br/>collections + tags"]
+        E{"promotion gate<br/><i>reject by default</i>"}
+    end
+
+    F[("desired.json<br/><i>the only handoff</i>")]
+
+    subgraph PB ["PHASE B · apply — browser only, never touches the network"]
+        direction TB
+        G["MV3 extension<br/>60s alarm"]
+        H["launchd agent<br/>900s interval"]
+        I["running browser<br/><b>~60 seconds</b>"]
+        J["Bookmarks file<br/><b>next browser start</b>"]
+    end
+
+    K["Bookmarks Bar<br/><i>your own nodes untouchable</i>"]
+
+    A -->|"paged ASCENDING"| B
+    B -->|unchanged| Z
+    B -->|"NEW / EDITED"| C
+    C --> C2
+    C2 --> D
+    C --> D
+    D --> A
+    C --> E
+    E --> F
+    F --> G
+    F --> H
+    G -->|"chrome.bookmarks.create()"| I
+    H -->|"backup, atomic write, verify"| J
+    I --> K
+    J --> K
+
+    style F fill:#fff4d6,stroke:#d9a406,stroke-width:2px
+    style K fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style C2 fill:#f3e5f5,stroke:#8a2be2,stroke-width:2px
+    style E fill:#ffebee,stroke:#c62828,stroke-width:2px
+```
+
+<details>
+<summary><b>The same thing with every detail spelled out</b> — encodings, call sequence, failure handling</summary>
 
 ```
 ╔═══ PHASE A — classify ══════════════════ Claude Code skill, on demand ═══╗
@@ -74,6 +155,8 @@ file. Phase B touches the browser and never touches the network.
                         Brave  ▸  Bookmarks Bar
                         (unmarked nodes untouchable by construction)
 ```
+
+</details>
 
 Both appliers are safe to run together: each skips anything already present by URL, and neither
 ever deletes. If the extension is disabled or Brave is closed, the file writer covers it. If the
