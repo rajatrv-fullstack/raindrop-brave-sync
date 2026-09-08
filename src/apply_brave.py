@@ -79,8 +79,12 @@ def backup():
     shutil.copy2(BOOKMARKS, dst)
     if os.path.exists(BAK): shutil.copy2(BAK, f"{BACKUPS}/Bookmarks.bak.{stamp}")
     json.load(open(dst))                       # prove the backup parses
-    olds = sorted(f for f in os.listdir(BACKUPS) if f.startswith("Bookmarks."))
-    for f in olds[:-KEEP * 2]: os.remove(f"{BACKUPS}/{f}")
+    # Prune per prefix. "Bookmarks.bak.<stamp>" sorts after every "Bookmarks.<stamp>", so a
+    # single sorted list would discard primary copies first and keep only .bak copies.
+    for prefix, other in (("Bookmarks.bak.", None), ("Bookmarks.", "Bookmarks.bak.")):
+        names = sorted(f for f in os.listdir(BACKUPS)
+                       if f.startswith(prefix) and not (other and f.startswith(other)))
+        for f in names[:-KEEP]: os.remove(f"{BACKUPS}/{f}")
     return dst
 
 def atomic_write(doc):

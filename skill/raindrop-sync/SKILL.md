@@ -74,7 +74,7 @@ missing from a read is far more likely to be a paging race than a real removal.
 
 ## Procedure
 
-1. Read the ledger: `SELECT source_id, content_hash FROM bookmarks;`
+1. Read the ledger: `SELECT raindrop_id, content_hash FROM bookmarks;`
 2. Fetch with `find_bookmarks`, paging **ascending** (`sort: created_asc`, `limit: 150`).
    Never page newest-first: a bookmark saved mid-run shifts the window, an item is skipped, and
    deletion logic misreads the gap as a removal.
@@ -85,7 +85,7 @@ missing from a read is far more likely to be a paging race than a real removal.
 5. Write back with `update_bookmarks`, grouped by (collection, tagset); at most 150 bookmark ids
    per call. Tags use `{"add": [...]}`, which appends - read-modify-write to replace.
    You cannot `add` and `remove` tags in one operation; the API rejects it. Split them.
-6. Append to `desired.json` as `{source_id, name, url, folder_path}`, with `folder_path`
+6. Append to `desired.json` as `{raindrop_id, name, url, folder_path}`, with `folder_path`
    relative to the bookmarks bar, e.g. `Raindrop/<Top Level Collection>`. Keep it **flat** - one level. Hover menus make every extra level of nesting a tax on the reader.
 7. Update the ledger and insert a row into `runs`.
 8. Do not write the browser's Bookmarks file. Phase B applies within about a minute.

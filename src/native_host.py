@@ -107,6 +107,11 @@ def op_applied(client, results):
         for f in (r.get("created_folders") or []):
             log(f"[{client}] created folder: {f}")
     con.commit(); con.close()
+    # A reset request is consumed exactly once: the extension has now acted on it.
+    rp = f"{ROOT}/reset_folders.json"
+    if os.path.exists(rp):
+        try: os.remove(rp); log("reset_folders.json cleared")
+        except OSError as e: log(f"could not clear reset_folders.json: {e}")
     log(f"applied[{client}]: recorded {n} results")
     return {"ok": True, "recorded": n}
 

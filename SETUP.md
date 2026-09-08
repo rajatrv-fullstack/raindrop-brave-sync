@@ -84,7 +84,7 @@ cd ~/src/raindrop-brave-sync
 ├── bin/                           apply_brave.py, native_host.py, get-token.sh, seed-token.sh
 ├── extension/                     manifest.json, sw.js  (loaded unpacked in step 5)
 ├── log/                           apply.out.log, apply.err.log, native_host.log
-├── backups/                       Bookmarks.<ISO8601>.json + .bak copies, keep 10
+├── backups/                       Bookmarks.<ISO8601> + .bak copies, keep 10
 ├── state.db                       SQLite ledger: bookmarks, taxonomy, sync_runs, extension_applied
 ├── taxonomy.json                  your pinned taxonomy - created by the FIRST classification pass
 ├── collection-map.json            collection path → Raindrop id
@@ -128,64 +128,47 @@ There is no way to un-print it. If you catch yourself having run `echo $RAINDROP
 `cat .env`, go back to Settings → Integrations, delete the token, and create a new one.
 
 The same applies to `ps`. Never pass a token as a command-line argument: argv is world-readable
-to every process running as you. The helper scripts avoid this deliberately - `seed-token.sh`
-writes to the keychain through `security -i`, which reads its command from stdin, and uses the
-`printf` builtin rather than a subprocess to write `.env`.
+to every process running as you. The helper scripts avoid this deliberately: `seed-token.sh`
+reads the token from a hidden prompt or from the environment, never from an argument.
 
 ### Store it
 
-`seed-token.sh` does not prompt - it resolves a token from the chain below and copies it into
-the keychain and `.env`. For a first install there is nothing to resolve yet, so hand it one
-through the environment, reading it with `read -rs` so the paste is never echoed and never
-enters your shell history:
+`seed-token.sh` stores the token in your login keychain under the service name `raindrop-api`.
+Run it with no arguments and paste at the hidden prompt, or hand it the token through the
+environment for a scripted install:
 
 ```bash
-read -rs RAINDROP_TOKEN            # paste, press Return; nothing is displayed
+~/.raindrop-sync/bin/seed-token.sh                 # prompts; input is not echoed
+```
+
+```bash
+read -rs RAINDROP_TOKEN                            # paste, press Return; nothing is displayed
 export RAINDROP_TOKEN
-~/.raindrop-sync/bin/seed-token.sh
+~/.raindrop-sync/bin/seed-token.sh --from-env
 unset RAINDROP_TOKEN
 ```
 
-(If you keep the token in 1Password, `seed-token.sh --from-op` re-reads it from there instead.
-That triggers Touch ID, so only do it while you are at the machine - on rotation, for example.)
+It prints only a confirmation, never the value. The `.env` file is an alternative, not a
+second copy: put `RAINDROP_TOKEN=...` in `~/.raindrop-sync/.env` with mode `0600` if you prefer
+a file, and skip the keychain.
 
-It writes the token to two places and then proves they agree, printing only an 8-character
-SHA-256 fingerprint - one-way, not reversible, safe to show:
+At read time `bin/get-token.sh` resolves in this order and prints the token on stdout and
+nothing else, so always consume it through a pipe:
 
-```
-Token resolved (36 chars), fingerprint: 1a2b3c4d
-Keychain : service 'raindrop-api' updated
-Fallback : /Users/you/.raindrop-sync/.env (mode 600)
+1. `$RAINDROP_TOKEN`, an explicit override for one-off runs
+2. `~/.raindrop-sync/.env`, mode `0600`
+3. the **login keychain**, service `raindrop-api`
 
-  keychain fingerprint : 1a2b3c4d
-  .env     fingerprint : 1a2b3c4d
-  resolver fingerprint : 1a2b3c4d
-OK: all agree. Unattended runs resolve from the keychain, no Touch ID.
-```
+The login keychain is the right home for unattended runs: `security show-keychain-info` reports
+it as `no-timeout`, so it unlocks at login and is never re-locked on a timer, and a launchd job
+can read it without a prompt. A password manager that requires Touch ID is the wrong home for
+the same reason: an unattended job must never depend on a human being at the machine. If you
+keep the token in a password manager, copy it into the keychain with `seed-token.sh --from-env`
+rather than reading it at point of use.
 
-At read time, `bin/get-token.sh` resolves in this order and prints the token on stdout and
-nothing else - always consume it through a pipe:
-
-1. `$RAINDROP_TOKEN` - explicit override, for one-off runs
-2. **login keychain** (service `raindrop-api`) - the primary source
-3. `~/.raindrop-sync/.env`, mode 0600 - cleartext fallback
-4. `op read` (1Password CLI) - last
-
-The order is not arbitrary. The keychain is primary because `security show-keychain-info`
-reports the login keychain as `no-timeout`: it unlocks at login and is never re-locked on a
-timer, so an unattended job can read it. A password manager is *last* because two scheduled
-runs died waiting on an interactive Touch ID prompt with nobody at the machine. **An
-unattended job must never depend on a human fingerprint.**
-
-`.env` is a deliberate cleartext fallback. Any process running as you can read it; the
-directory is `0700` and the file `0600`, and that is the whole of its protection. If that
-trade is not acceptable to you, delete `.env` and rely on the keychain alone.
-
-If you keep the token in 1Password and read it at point of use, note that a note field can be
-multi-line - a label line plus the token. A bare `op read` returns both lines, and piping that
-through `xargs` into `curl` will run curl *twice*: the malformed first call 401s, the second
-succeeds, and the whole thing looks like it worked. `get-token.sh` normalises to the single
-36-character UUID line for exactly this reason.
+`.env` is cleartext. Any process running as you can read it; the directory is `0700` and the
+file `0600`, and that is the whole of its protection. If that trade is not acceptable, use the
+keychain alone.
 
 ---
 
@@ -488,8 +471,9 @@ stat -f '%Lp' ~/.raindrop-sync/key.pem   # 600   (extension installs only)
 ~/.raindrop-sync/bin/get-token.sh | shasum -a 256 | cut -c1-8
 ```
 
-Expected: 8 hex characters, matching the fingerprint `seed-token.sh` printed. If it prints
-`get-token: no token from env, keychain, .env, or op`, go back to step 2.
+Expected: 8 hex characters and nothing else. If it prints
+`No Raindrop token found. Set RAINDROP_TOKEN, populate ~/.raindrop-sync/.env, or run scripts/seed-token.sh`,
+go back to step 2.
 
 **3. The token actually authenticates - without putting it in argv**
 
@@ -788,11 +772,11 @@ ls -t ~/.raindrop-sync/backups/ | head
 
 # 3. Confirm it parses BEFORE restoring:
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("version",d["version"],
-  "roots",sorted(d["roots"]))' ~/.raindrop-sync/backups/Bookmarks.<TIMESTAMP>.json
+  "roots",sorted(d["roots"]))' ~/.raindrop-sync/backups/Bookmarks.<TIMESTAMP>
 
 # 4. Restore:
 P="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default"
-cp ~/.raindrop-sync/backups/Bookmarks.<TIMESTAMP>.json "$P/Bookmarks"
+cp ~/.raindrop-sync/backups/Bookmarks.<TIMESTAMP> "$P/Bookmarks"
 
 # 5. Start Brave and confirm the bar is back.
 ```
