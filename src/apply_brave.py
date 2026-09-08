@@ -15,7 +15,8 @@ until the marked nodes persist. Both writers are atomic, so the file is never to
 
 Exit codes: 0 ok / nothing to do · 1 hard failure (backup restored) · 2 preflight abort
 """
-import json, hashlib, uuid, time, os, sys, shutil, tempfile, subprocess
+import json, hashlib, uuid, time, os, sys, shutil, tempfile
+import subprocess  # nosec B404 - fixed argv only, see is_brave_running()
 from datetime import datetime, timezone
 
 def read_json(path):
@@ -38,7 +39,7 @@ KEEP     = 10
 def log(m): print(f"{datetime.now(timezone.utc).isoformat()} {m}", flush=True)
 
 def checksum(doc):
-    m = hashlib.md5()
+    m = hashlib.md5(usedforsecurity=False)  # Chromium's file checksum, not a security use
     u8  = lambda s: m.update(s.encode("utf-8"))
     u16 = lambda s: m.update(s.encode("utf-16-le", "surrogatepass"))
     def node(n):
@@ -56,6 +57,11 @@ def walk(n, fn, path=""):
     p = f"{path}/{n['name']}" if path else n["name"]
     fn(n, p)
     for c in n.get("children", []): walk(c, fn, p)
+
+def is_brave_running():
+    # Fixed argv, absolute path, no shell: nothing here is derived from input.
+    return subprocess.run(["/usr/bin/pgrep", "-x", "Brave Browser"],  # nosec B603
+                          capture_output=True, check=False).returncode == 0
 
 def preflight():
     if not os.path.exists(BOOKMARKS):
@@ -189,19 +195,23 @@ def main():
     # verify from disk
     try:
         v = read_json(BOOKMARKS)
-        assert checksum(v) == v["checksum"], "checksum mismatch after write"
+        if checksum(v) != v["checksum"]:
+            raise RuntimeError("checksum mismatch after write")
         vids, vguids = [], []
         for r in ("bookmark_bar", "other", "synced"):
             walk(v["roots"][r], lambda n, p: (vids.append(n["id"]), vguids.append(n.get("guid"))))
-        assert len(vids) == len(set(vids)), "duplicate ids"
+        if len(vids) != len(set(vids)):
+            raise RuntimeError("duplicate ids")
         gs = [g for g in vguids if g]
-        assert len(gs) == len(set(gs)), "duplicate guids"
+        if len(gs) != len(set(gs)):
+            raise RuntimeError("duplicate guids")
         vurls = set()
         for r in ("bookmark_bar", "other", "synced"):
             walk(v["roots"][r], lambda n, p: vurls.add(n["url"]) if n.get("url") else None)
         gset = set(gs)
         landed = sum(1 for g, d in wanted.items() if g in gset or d["url"] in vurls)
-        assert landed == len(wanted), f"only {landed}/{len(wanted)} landed"
+        if landed != len(wanted):
+            raise RuntimeError(f"only {landed}/{len(wanted)} landed")
     except Exception as e:
         log(f"VERIFY FAILED: {e}; restoring backup"); shutil.copy2(bk, BOOKMARKS); return 1
 
@@ -209,7 +219,7 @@ def main():
         json.dump({"applied_guids": sorted(wanted), "at": datetime.now(timezone.utc).isoformat()}, f, indent=1)
     for f in created_folders: log(f"created folder: {f}")
     log(f"OK: {len(todo)} applied, {len(wanted)} total marked nodes present")
-    if subprocess.run(["pgrep", "-x", "Brave Browser"], capture_output=True).returncode == 0:
+    if is_brave_running():
         log("NOTE: Brave is running. It may overwrite this from memory; the next tick re-applies.")
     return 0
 
