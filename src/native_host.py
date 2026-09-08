@@ -18,6 +18,10 @@ told there is nothing pending -- and would silently never receive it.
 import sys, json, struct, sqlite3, os
 from datetime import datetime, timezone
 
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
 VERSION = "1.0.0"
 ROOT    = os.environ.get("RAINDROP_SYNC_ROOT", os.path.expanduser("~/.raindrop-sync"))
 DESIRED = f"{ROOT}/desired.json"
@@ -29,8 +33,9 @@ def log(msg):
         os.makedirs(os.path.dirname(LOG), exist_ok=True)
         with open(LOG, "a") as f:
             f.write(f"{datetime.now(timezone.utc).isoformat()} {msg}\n")
-    except Exception:
-        pass
+    except OSError as e:
+        # The log is best-effort; stderr is safe in a native host (only stdout is protocol).
+        sys.stderr.write(f"native_host: log write failed: {e}\n")
 
 def db():
     con = sqlite3.connect(DB)
@@ -63,7 +68,7 @@ def op_pending(client):
     if not os.path.exists(DESIRED):
         return {"items": []}
     try:
-        desired = json.load(open(DESIRED))
+        desired = read_json(DESIRED)
     except Exception as e:
         log(f"desired.json unreadable: {e}")
         return {"items": [], "error": "desired unreadable"}
@@ -78,7 +83,7 @@ def op_pending(client):
     resets = []
     rp = f"{ROOT}/reset_folders.json"
     if os.path.exists(rp) and items:
-        try: resets = json.load(open(rp))
+        try: resets = read_json(rp)
         except Exception as e: log(f"reset_folders.json unreadable: {e}")
     log(f"pending[{client}]: {len(items)} of {len(desired)} staged"
         + (f", reset {resets}" if resets else ""))
@@ -89,9 +94,9 @@ def op_applied(client, results):
     now = datetime.now(timezone.utc).isoformat()
     by_id = {}
     try:
-        by_id = {d["raindrop_id"]: d for d in json.load(open(DESIRED))}
-    except Exception:
-        pass
+        by_id = {d["raindrop_id"]: d for d in read_json(DESIRED)}
+    except (OSError, ValueError, KeyError) as e:
+        log(f"desired.json unreadable while recording results: {e}")
     n = 0
     for r in results or []:
         rid = r.get("raindrop_id")

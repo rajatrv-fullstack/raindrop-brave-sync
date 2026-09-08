@@ -18,6 +18,10 @@ Exit codes: 0 ok / nothing to do · 1 hard failure (backup restored) · 2 prefli
 import json, hashlib, uuid, time, os, sys, shutil, tempfile, subprocess
 from datetime import datetime, timezone
 
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
 HOME     = os.path.expanduser("~")
 PROFILE  = os.environ.get("RAINDROP_SYNC_PROFILE",
            f"{HOME}/Library/Application Support/BraveSoftware/Brave-Browser/Default")
@@ -59,7 +63,7 @@ def preflight():
     for bad in ("AccountBookmarks", "EncryptedBookmarks2", "EncryptedAccountBookmarks2"):
         if os.path.exists(f"{PROFILE}/{bad}"):
             log(f"ABORT: {bad} present (account/encrypted storage out of scope)."); sys.exit(2)
-    doc = json.load(open(BOOKMARKS))
+    doc = read_json(BOOKMARKS)
     if doc.get("version") != 1:
         log(f"ABORT: unexpected version {doc.get('version')}"); sys.exit(2)
     for r in ("bookmark_bar", "other", "synced"):
@@ -78,7 +82,7 @@ def backup():
     dst = f"{BACKUPS}/Bookmarks.{stamp}"
     shutil.copy2(BOOKMARKS, dst)
     if os.path.exists(BAK): shutil.copy2(BAK, f"{BACKUPS}/Bookmarks.bak.{stamp}")
-    json.load(open(dst))                       # prove the backup parses
+    read_json(dst)                       # prove the backup parses
     # Prune per prefix. "Bookmarks.bak.<stamp>" sorts after every "Bookmarks.<stamp>", so a
     # single sorted list would discard primary copies first and keep only .bak copies.
     for prefix, other in (("Bookmarks.bak.", None), ("Bookmarks.", "Bookmarks.bak.")):
@@ -127,7 +131,7 @@ def find_folder(bar, parts):
 def main():
     if not os.path.exists(DESIRED):
         log("no desired.json; nothing to do"); return 0
-    desired = json.load(open(DESIRED))
+    desired = read_json(DESIRED)
     if not desired:
         log("desired.json empty; nothing to do"); return 0
 
@@ -184,7 +188,7 @@ def main():
 
     # verify from disk
     try:
-        v = json.load(open(BOOKMARKS))
+        v = read_json(BOOKMARKS)
         assert checksum(v) == v["checksum"], "checksum mismatch after write"
         vids, vguids = [], []
         for r in ("bookmark_bar", "other", "synced"):
