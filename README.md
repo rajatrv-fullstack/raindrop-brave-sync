@@ -29,6 +29,7 @@
   <a href="https://github.com/users/rajatrv-fullstack/projects/1"><img alt="Roadmap" src="https://img.shields.io/badge/roadmap-public_board-0969da?style=flat-square"></a>
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki"><img alt="Wiki" src="https://img.shields.io/badge/wiki-13_pages-1f883d?style=flat-square"></a>
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/policy"><img alt="Security policy" src="https://img.shields.io/badge/security-policy_%2B_CodeQL-b60205?style=flat-square"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/rajatrv-fullstack/raindrop-brave-sync"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/rajatrv-fullstack/raindrop-brave-sync/badge"></a>
 </p>
 
 

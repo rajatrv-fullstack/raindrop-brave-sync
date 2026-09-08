@@ -10,24 +10,26 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   semgrep:
     name: Semgrep (Python, JavaScript, bash, secrets)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Install the open-source CLI (no account, no token)
-        run: python -m pip install --quiet semgrep
+        run: python -m pip install --quiet "semgrep==1.176.1"
       - name: Scan
         run: |
           set +e
           semgrep scan \
-            --config p/python --config p/javascript --config p/bash --config p/secrets \
+            --config p/python --config p/javascript --config p/secrets --config p/default \
             --sarif --output semgrep.sarif --metrics=off
           rc=$?
           echo "semgrep exit code: $rc"
