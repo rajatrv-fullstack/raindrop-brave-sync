@@ -205,8 +205,8 @@ def main():
     except Exception as e:
         log(f"VERIFY FAILED: {e}; restoring backup"); shutil.copy2(bk, BOOKMARKS); return 1
 
-    json.dump({"applied_guids": sorted(wanted), "at": datetime.now(timezone.utc).isoformat()},
-              open(APPLIED, "w"), indent=1)
+    with open(APPLIED, "w", encoding="utf-8") as f:
+        json.dump({"applied_guids": sorted(wanted), "at": datetime.now(timezone.utc).isoformat()}, f, indent=1)
     for f in created_folders: log(f"created folder: {f}")
     log(f"OK: {len(todo)} applied, {len(wanted)} total marked nodes present")
     if subprocess.run(["pgrep", "-x", "Brave Browser"], capture_output=True).returncode == 0:
