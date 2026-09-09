@@ -418,7 +418,7 @@ what had to be discovered by experiment because no documentation says it, includ
 
 ## Tests
 
-`tests/` is a pytest suite (25 tests) that runs on Python 3.9 and 3.12 on every push. It
+`tests/` is a pytest suite (25 tests) that runs on Python 3.10 and 3.12 on every push. It
 exercises the writer and the native host against throwaway directories only and enforces a
 coverage floor of 85 percent; the current figures are printed in each run's job summary. An
 adversarial pass mutated both modules to confirm every test fails when its invariant is broken.

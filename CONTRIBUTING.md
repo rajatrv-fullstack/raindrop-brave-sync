@@ -51,7 +51,7 @@ pull request that adds functionality without a test, or that weakens an existing
 it pass, will be sent back. Run the suite locally with:
 
 ```bash
-python3 -m pip install pytest
+python3 -m pip install "pytest>=9.0.3" coverage   # the suite needs Python 3.10+; the tool itself runs on 3.9+
 python3 -m pytest tests -q
 ```
 
