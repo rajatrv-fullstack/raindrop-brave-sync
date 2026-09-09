@@ -1,8 +1,12 @@
-<h1 align="center">raindrop-brave-sync</h1>
+<h1 align="center">Raindrop to Brave: bookmarks that file themselves</h1>
 
 <p align="center">
-  <em>An LLM reads your bookmark library, works out what each save was actually about,<br>
-  and files it - into Raindrop and into your browser bar.</em>
+  <strong>An LLM reads your Raindrop.io library, works out what each save was actually about,<br>
+  sorts it into collections, and mirrors the result onto your Brave bookmarks bar within a minute.</strong>
+</p>
+
+<p align="center">
+  <em>Plus the Chromium and Brave internals it took to get there, documented so you do not have to rediscover them.</em>
 </p>
 
 <p align="center">
