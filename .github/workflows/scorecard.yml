@@ -32,6 +32,6 @@ jobs:
           name: SARIF file
           path: results.sarif
           retention-days: 5
-      - uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3
-        with:
-          sarif_file: results.sarif
+      # The score and per-check results are published to scorecard.dev (see the README badge).
+      # They are not uploaded to code scanning on purpose: that page is for findings in code,
+      # and repository-process checks (review policy, project age, fuzzing) are not that.
