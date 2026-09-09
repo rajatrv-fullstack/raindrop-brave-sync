@@ -40,6 +40,21 @@ SKIP_LAUNCHCTL=1 bash scripts/bootstrap.sh
 This is not optional politeness - a bug in the writer silently destroys a bookmark library, and
 Chromium has no restore path. See finding 6.
 
+## Tests
+
+`tests/` is a pytest suite that runs on every push and pull request (see the Tests badge).
+It exercises the writer and the native host against throwaway directories only; nothing in it
+reads or writes a real profile.
+
+**A change that alters behaviour must come with a test that would have failed before it.** A
+pull request that adds functionality without a test, or that weakens an existing test to make
+it pass, will be sent back. Run the suite locally with:
+
+```bash
+python3 -m pip install pytest
+python3 -m pytest tests -q
+```
+
 ## Code
 
 - Python: stdlib only. No dependencies is a feature; keep it.

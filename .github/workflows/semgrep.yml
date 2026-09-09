@@ -27,15 +27,11 @@ jobs:
         run: python -m pip install --quiet --require-hashes -r .github/requirements/semgrep.txt
       - name: Scan
         run: |
-          set +e
-          semgrep scan \
+          semgrep scan --error \
             --config p/python --config p/javascript --config p/secrets --config p/default \
             --sarif --output semgrep.sarif --metrics=off
-          rc=$?
-          echo "semgrep exit code: $rc"
-          # 0 = no findings, 1 = findings (still upload); anything else is a real failure
-          [ "$rc" -le 1 ] || exit "$rc"
       - name: Upload to code scanning
+        if: always()
         uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3
         with:
           sarif_file: semgrep.sarif
