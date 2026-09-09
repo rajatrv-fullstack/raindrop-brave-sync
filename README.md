@@ -35,6 +35,8 @@
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki"><img alt="Wiki" src="https://img.shields.io/badge/wiki-13_pages-1f883d?style=flat-square"></a>
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/policy"><img alt="Security policy" src="https://img.shields.io/badge/security-policy_%2B_CodeQL-b60205?style=flat-square"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/rajatrv-fullstack/raindrop-brave-sync"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/rajatrv-fullstack/raindrop-brave-sync/badge"></a>
+  <a href="https://www.bestpractices.dev/projects/14551"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/14551/badge"></a>
+  <a href="PRIVACY.md"><img alt="Privacy: local only, no telemetry" src="https://img.shields.io/badge/privacy-local_only%2C_no_telemetry-2ea44f?style=flat-square"></a>
 </p>
 
 
@@ -424,6 +426,10 @@ Two of the tests document bugs found by writing them: an unpaired surrogate in a
 used to make every write fail, and the temp file was opened without an explicit encoding.
 
 ## Security
+
+The complete list of what leaves your machine is in [PRIVACY.md](PRIVACY.md): the Raindrop API,
+and the model behind your own Claude Code session. Nothing else, ever.
+
 
 This tool writes into your browser profile and handles an API token, so the bar for a bug is
 low: nothing crashes, a library is quietly damaged or a credential quietly leaks. Read the
