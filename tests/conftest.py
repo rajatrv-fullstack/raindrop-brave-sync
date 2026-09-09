@@ -34,6 +34,12 @@ os.environ["RAINDROP_SYNC_ROOT"] = f"{_SENTINEL}/root"
 
 import apply_brave  # noqa: E402  (must follow the environment pin above)
 
+# One table for the folder_path rule, shared with the extension's own test runner
+# (tests/js/run.mjs) so the host, the file writer and the worker are held to the same cases.
+# Each case is {"path": <staged string>, "parts": [<segments>] or None when rejected}.
+with open(Path(__file__).resolve().parent / "js" / "folder_paths.json", encoding="utf-8") as _f:
+    FOLDER_PATH_CASES = json.load(_f)["cases"]
+
 # Chromium's well-known permanent-node GUIDs (components/bookmarks/browser/bookmark_node.cc,
 # kBookmarkBarNodeUuid / kOtherBookmarksNodeUuid / kMobileBookmarksNodeUuid).
 ROOT_GUIDS = {

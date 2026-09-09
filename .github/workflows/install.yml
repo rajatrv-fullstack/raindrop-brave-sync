@@ -1,0 +1,31 @@
+name: Install
+
+# A first-time install on a stock macOS runner, from a copy of the checkout with .env.example
+# removed, every path redirected into a sandbox: bootstrap, doctor, the host through its
+# wrapper, the file writer twice, a folder reset, an idempotent re-run, the Brave Sync and
+# missing-profile paths. This is the job that would have caught the 1.0.x install blocker.
+on:
+  push:
+    branches: [main]
+    paths: ["scripts/**", "src/**", "launchd/**", "extension/**", ".github/workflows/install.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["scripts/**", "src/**", "launchd/**", "extension/**", ".github/workflows/install.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal:
+    name: fresh install on macOS (stock python3)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Rehearse a first-time install in a sandbox
+        # No setup-python on purpose: the point is /usr/bin/python3 as a new user has it.
+        run: scripts/ci-rehearsal.sh "$RUNNER_TEMP/rehearsal" | tee rehearsal.txt
+      - name: Job summary
+        if: always()
+        run: |
+          { echo '### Fresh-install rehearsal (macOS)'; echo; echo '```'; grep -E '^(###|  (ok|FAIL)|REHEARSAL)' rehearsal.txt | sed 's/\x1b\[[0-9;]*m//g'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

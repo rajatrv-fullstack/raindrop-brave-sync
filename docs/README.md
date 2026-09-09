@@ -25,6 +25,9 @@ discoverable from one place.
 
 - [SECURITY.md](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/SECURITY.md): reporting, scope, and the controls that run on
   every push.
+- [scripts/doctor.sh](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/scripts/doctor.sh): the health check to run first, and to
+  ask a friend for; [scripts/ci-rehearsal.sh](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/scripts/ci-rehearsal.sh): the
+  fresh-install rehearsal CI runs on every push.
 - [fuzz/README.md](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/fuzz/README.md): the fuzz targets, their contracts, and
   how to replay a crashing input.
 - [PRIVACY.md](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/PRIVACY.md): the complete list of what leaves your machine.

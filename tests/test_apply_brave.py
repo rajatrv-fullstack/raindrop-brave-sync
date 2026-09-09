@@ -575,3 +575,80 @@ def test_write_survives_a_lone_surrogate_in_an_existing_title(sandbox, bm, capsy
     assert apply_brave.checksum(after) == after["checksum"]
     assert len(nodes_with_url(after, "https://example.com/s")) == 1, "the surrogate title must survive"
     assert len(nodes_with_url(after, "https://example.com/1")) == 1, "the promotion must land"
+
+
+# --- 13. rules shared with the host and the extension ----------------------------------------
+
+def test_canon_and_folder_rule_agree_with_the_host_copy_and_the_shared_table():
+    """canon() and norm_folder_path() are duplicated in native_host.py because the two files
+    are installed separately. This is the check that keeps the copies identical, and holds
+    both to the table the extension's harness reads (tests/js/folder_paths.json)."""
+    import importlib.util, conftest
+    from pathlib import Path
+    src = Path(apply_brave.__file__).resolve().parent
+    spec = importlib.util.spec_from_file_location("nh", src / "native_host.py")
+    nh = importlib.util.module_from_spec(spec); spec.loader.exec_module(nh)
+    import inspect
+    for name in ("canon", "norm_folder_path", "_split_netloc"):
+        assert inspect.getsource(getattr(apply_brave, name)) == inspect.getsource(getattr(nh, name)), (
+            f"{name}() differs between apply_brave.py and native_host.py")
+    for c in conftest.FOLDER_PATH_CASES:
+        assert apply_brave.norm_folder_path(c["path"]) == c["parts"], c
+    for raw, want in (("https://WWW.Example.org", "https://www.example.org/"),
+                      ("HTTPS://example.org/A?b=C#D", "https://example.org/A?b=C#D"),
+                      (" https://example.org/x \n", "https://example.org/x"),
+                      ("https://user:pw@Example.org:8443", "https://user:pw@example.org:8443/"),
+                      ("file:///Users/x/doc.pdf", "file:///Users/x/doc.pdf"),
+                      ("not a url", None), ("https://", None), (None, None), (42, None)):
+        assert apply_brave.canon(raw) == want, (raw, apply_brave.canon(raw))
+
+
+def test_non_canonical_staged_url_matches_the_browser_form_and_is_not_duplicated(sandbox, bm, capsys):
+    """Brave stores https://www.example.org/ ; Raindrop may hand back https://WWW.example.org.
+    A strict compare created a second copy from each applier (audit EXT-02)."""
+    doc = bm.doc(bar=[bm.folder("Raindrop", [bm.url("Existing", "https://www.example.org/")])])
+    sandbox.write_bookmarks(doc)
+    sandbox.write_desired([item(1, "Same site", "https://WWW.example.org", "Raindrop/Sites"),
+                           item(2, "Other", "https://other.example/", "Raindrop/Sites")])
+    assert apply_brave.main() == 0
+    out = capsys.readouterr().out
+    assert "1 to apply (1 already present)" in out, out
+    after = sandbox.read_bookmarks()
+    assert len(nodes_with_url(after, "https://www.example.org/")) == 1, "canonical duplicate created"
+    assert "https://WWW.example.org" not in json.dumps(after), "the non-canonical form must not be written"
+
+
+def test_invalid_url_is_skipped_with_one_line_and_the_rest_still_lands(sandbox, bm, capsys):
+    sandbox.write_bookmarks(bm.doc())
+    sandbox.write_desired([item(1, "Broken", "not a url", "Raindrop/X"),
+                           item(2, "Bar only", "https://ok.example/", "Bookmarks Bar"),
+                           item(3, "Fine", "https://fine.example/", "Raindrop/X")])
+    assert apply_brave.main() == 0
+    out = capsys.readouterr().out
+    assert "skipping 1: invalid url 'not a url'" in out, out
+    assert "skipping 2: empty folder_path" in out, out
+    after = sandbox.read_bookmarks()
+    assert len(nodes_with_url(after, "https://fine.example/")) == 1
+    assert nodes_with_url(after, "not a url") == [] and nodes_with_url(after, "https://ok.example/") == []
+
+
+def test_profile_comes_from_env_then_config_json_then_the_stock_default(tmp_path, monkeypatch):
+    root = tmp_path / "root"; root.mkdir()
+    cfg = tmp_path / "from-config"
+    (root / "config.json").write_text(json.dumps({"profile": str(cfg)}), encoding="utf-8")
+    assert apply_brave.resolve_profile(str(root), {"RAINDROP_SYNC_PROFILE": "/from/env"}) == "/from/env"
+    assert apply_brave.resolve_profile(str(root), {}) == str(cfg)
+    (root / "config.json").write_text(json.dumps({"profile": None}), encoding="utf-8")
+    assert apply_brave.resolve_profile(str(root), {}).endswith("BraveSoftware/Brave-Browser/Default")
+    (root / "config.json").write_text("{not json", encoding="utf-8")
+    assert apply_brave.resolve_profile(str(root), {}).endswith("BraveSoftware/Brave-Browser/Default")
+
+
+def test_launchd_logs_rotate_at_one_megabyte(sandbox, capsys):
+    logdir = sandbox.root / "log"; logdir.mkdir()
+    big = logdir / "apply.out.log"; big.write_bytes(b"x" * (apply_brave.MAX_LOG + 1))
+    small = logdir / "apply.err.log"; small.write_bytes(b"y" * 10)
+    apply_brave.rotate_logs()
+    assert (logdir / "apply.out.log.1").exists() and not big.exists(), "the oversized log must move to .1"
+    assert small.exists() and not (logdir / "apply.err.log.1").exists(), "a small log is left alone"
+    assert "rotated apply.out.log" in capsys.readouterr().out

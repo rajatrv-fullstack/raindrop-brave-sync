@@ -1,0 +1,19 @@
+{
+  "note": "One pass of the shared folder_path rule: split on '/', trim each segment, drop empty segments, strip ONE leading 'Bookmarks Bar'. parts null means the item is rejected. Read by tests/test_native_host.py, tests/test_apply_brave.py and tests/js/run.mjs so the host, the file writer and the extension are held to the same table.",
+  "cases": [
+    {"path": "Raindrop/Gardening", "parts": ["Raindrop", "Gardening"]},
+    {"path": "Bookmarks Bar/Raindrop/Gardening", "parts": ["Raindrop", "Gardening"]},
+    {"path": " Raindrop / Gardening ", "parts": ["Raindrop", "Gardening"]},
+    {"path": "Raindrop//Gardening/", "parts": ["Raindrop", "Gardening"]},
+    {"path": "/Raindrop/Cycling/", "parts": ["Raindrop", "Cycling"]},
+    {"path": "Recipes", "parts": ["Recipes"]},
+    {"path": "Raindrop/Bookmarks Bar/Recipes", "parts": ["Raindrop", "Bookmarks Bar", "Recipes"]},
+    {"path": "Bookmarks Bar/Bookmarks Bar/Research", "parts": ["Bookmarks Bar", "Research"]},
+    {"path": "bookmarks bar/Research", "parts": ["bookmarks bar", "Research"]},
+    {"path": "Bookmarks Bar", "parts": null},
+    {"path": " Bookmarks Bar / ", "parts": null},
+    {"path": "", "parts": null},
+    {"path": " / / ", "parts": null},
+    {"path": "Bookmarks Bar/ /", "parts": null}
+  ]
+}

@@ -14,11 +14,20 @@ State lives in `~/.raindrop-sync/`:
 
 | file | role |
 |---|---|
-| `state.db` | SQLite ledger: `bookmarks`, `meta`, `runs`, `extension_applied` |
+| `state.db` | SQLite ledger: `bookmarks`, `meta`, `runs`, `extension_applied`. Created by bootstrap (`native_host.py --init-db`); never create tables here |
 | `taxonomy.json` | the PINNED taxonomy, generated from this library on first run |
 | `collection-map.json` | taxonomy path → Raindrop `collection_id` |
 | `desired.json` | staged browser bookmarks, consumed by Phase B |
 | `reset_folders.json` | asks Phase B to tear down and rebuild a managed folder |
+
+## First run
+
+If `taxonomy.json` does not exist, this is the first run. Build the pinned taxonomy from the
+collections the user already has (`find_collections`), not from scratch: write `taxonomy.json`
+as `{"collections": [{"title", "description", "children": [{"title", "description"}]}],
+"tags": [{"tag", "meaning"}], "rationale"}`, write `collection-map.json` as
+`{"<Top Level/Child>": <collection_id>}`, and insert `taxonomy_version` = `1` into `meta`
+(`k`, `v`). From then on rule 1 applies. Say what was pinned in the run summary.
 
 ## Rules that are not negotiable
 
@@ -86,7 +95,11 @@ missing from a read is far more likely to be a paging race than a real removal.
    per call. Tags use `{"add": [...]}`, which appends - read-modify-write to replace.
    You cannot `add` and `remove` tags in one operation; the API rejects it. Split them.
 6. Append to `desired.json` as `{raindrop_id, name, url, folder_path}`, with `folder_path`
-   relative to the bookmarks bar, e.g. `Raindrop/<Top Level Collection>`. Keep it **flat** - one level. Hover menus make every extra level of nesting a tax on the reader.
+   relative to the bookmarks bar, e.g. `Raindrop/<Top Level Collection>`. Keep it **flat**: one
+   level. Hover menus make every extra level of nesting a tax on the reader. `url` must be an
+   absolute URL with a scheme and a host; both appliers reject anything else, record it as
+   `rejected` in `extension_applied`, and never retry it. Fix the entry and delete that row if
+   you want it applied.
 7. Update the ledger and insert a row into `runs`.
 8. Do not write the browser's Bookmarks file. Phase B applies within about a minute.
 
@@ -107,9 +120,12 @@ The API token lives in the keychain or `.env` (mode 0600). **Never echo it** - n
 not into a variable you later print, not while probing which field holds it. Pipe it:
 
 ```bash
-scripts/get-token.sh | xargs -I{} curl -s -H "Authorization: Bearer {}" \
-  "https://api.raindrop.io/rest/v1/raindrops/0?perpage=50&page=0&sort=created"
+printf 'header = "Authorization: Bearer %s"\n' "$(~/.raindrop-sync/bin/get-token.sh)" \
+  | curl -s --config - "https://api.raindrop.io/rest/v1/raindrops/0?perpage=50&page=0&sort=created"
 ```
+
+Never `xargs` it into `-H`: that puts the token in `curl`'s argv, which `ps` shows to every
+process running as the user.
 
 If a token does reach a transcript, say so plainly and tell the user to rotate it. Do not move on
 quietly.

@@ -238,35 +238,91 @@ def test_applied_error_is_recorded_logged_and_item_stays_pending(staged_root):
     assert "[brave] created folder: Raindrop" in log, f"created folder was not logged:\n{log}"
 
 
-def test_reset_folders_returned_only_with_pending_items_and_cleared_after_applied(staged_root):
+def test_reset_re_offers_everything_under_the_folder_and_is_consumed_by_applied(staged_root):
+    """A folder rebuild removes every managed bookmark under it from the running browser, so
+    the same reply that carries the reset must also carry every item under that folder again.
+    Before this rule the ledger still said 'created' for them and they were gone for good."""
     root = staged_root
     reset_file = root / "reset_folders.json"
 
-    # brave applies everything before the reset request exists.
+    # brave applies everything; then Phase A asks for a rebuild of the managed folder.
     talk(root, [{"op": "applied", "client": "brave", "results": created_results(ITEMS)}])
     reset_file.write_text(json.dumps(["Raindrop"]), encoding="utf-8")
 
-    # brave has nothing pending, so it is not asked to reset. chrome has items, so it is.
-    brave, chrome = talk(root, [{"op": "pending", "client": "brave"},
-                                {"op": "pending", "client": "chrome"}])
-    assert brave.get("items") == [], f"brave should have nothing pending: {brave!r}"
-    assert brave.get("reset_folders", []) == [], (
-        f"reset must not be handed to a client with no pending items: {brave!r}")
-    assert chrome.get("items") == ITEMS, f"chrome should see every item: {chrome!r}"
-    assert chrome.get("reset_folders") == ["Raindrop"], (
-        f"reset should accompany pending items: {chrome!r}")
+    (brave,) = talk(root, [{"op": "pending", "client": "brave"}])
+    assert brave.get("reset_folders") == ["Raindrop"], f"reset must be handed out: {brave!r}"
+    assert brave.get("items") == ITEMS, (
+        f"every item under the reset folder must be offered again in the same reply: {brave!r}")
     assert reset_file.exists(), "pending must not consume reset_folders.json; only applied does"
+    assert "cleared 3 ledger rows" in host_log(root), "the ledger reset was not logged"
 
-    # chrome reports back: the reset has been acted on and the file is consumed.
-    (reply,) = talk(root, [{"op": "applied", "client": "chrome", "results": created_results(ITEMS)}])
+    # brave rebuilds and reports; the request is consumed and nothing is offered twice.
+    (reply,) = talk(root, [{"op": "applied", "client": "brave", "results": created_results(ITEMS)}])
     assert reply.get("ok") is True, f"applied was not acknowledged: {reply!r}"
     assert not reset_file.exists(), "reset_folders.json must be deleted once applied is reported"
-    assert "reset_folders.json cleared" in host_log(root), "clearing the reset was not logged"
+    (later,) = talk(root, [{"op": "pending", "client": "brave"}])
+    assert later.get("items") == [] and later.get("reset_folders", []) == [], (
+        f"consumed reset reappeared or items were re-offered: {later!r}")
 
-    # And a later tick offers no reset to anyone.
-    (later,) = talk(root, [{"op": "pending", "client": "edge"}])
-    assert later.get("items") == ITEMS, f"edge has applied nothing and should see items: {later!r}"
-    assert later.get("reset_folders", []) == [], f"consumed reset reappeared: {later!r}"
+    # A client that has applied nothing under the folder simply sees the items, as always.
+    reset_file.write_text(json.dumps(["Raindrop"]), encoding="utf-8")
+    (edge,) = talk(root, [{"op": "pending", "client": "edge"}])
+    assert edge.get("items") == ITEMS and edge.get("reset_folders") == ["Raindrop"], edge
+
+
+def test_invalid_url_or_empty_folder_is_rejected_once_and_never_offered_again(root):
+    """An entry Chromium would refuse used to be retried every minute forever, spawning the
+    host twice a tick and leaving an empty folder behind. Now the host records it as rejected
+    (terminal) on the first pending and hands out only the usable entries."""
+    bad = [{"raindrop_id": 201, "name": "no scheme", "url": "not a url", "folder_path": "Raindrop/X"},
+           {"raindrop_id": 202, "name": "no folder", "url": "https://ok.example/", "folder_path": " / "},
+           {"raindrop_id": 203, "name": "bar only", "url": "https://ok.example/2", "folder_path": "Bookmarks Bar"}]
+    write_desired(root, bad + ITEMS)
+
+    first, second = talk(root, [{"op": "pending", "client": "brave"}, {"op": "pending", "client": "brave"}])
+    assert [it["raindrop_id"] for it in first["items"]] == [101, 102, 103], first
+    assert second["items"] == first["items"], "the second tick must not change the offer"
+    rejected = [(rid, st) for _, rid, st, _, _ in ledger_rows(root) if st == "rejected"]
+    assert sorted(rejected) == [(201, "rejected"), (202, "rejected"), (203, "rejected")], rejected
+    assert host_log(root).count("rejected 201") == 1, "a rejection must be logged once, not per tick"
+
+    # The extension can reject too (new URL() threw); that is terminal as well.
+    talk(root, [{"op": "applied", "client": "brave",
+                 "results": [{"raindrop_id": 101, "status": "rejected", "error": "invalid url"}]}])
+    (again,) = talk(root, [{"op": "pending", "client": "brave"}])
+    assert [it["raindrop_id"] for it in again["items"]] == [102, 103], again
+
+
+def test_pending_normalises_folder_paths_with_the_shared_rule(root):
+    """The one table in tests/js/folder_paths.json is what the extension and the file writer
+    are held to; the host applies it before anything is handed out."""
+    import conftest
+    cases = [c for c in conftest.FOLDER_PATH_CASES if c["parts"] is not None]
+    items = [{"raindrop_id": 300 + i, "name": f"n{i}", "url": f"https://e.example/{i}",
+              "folder_path": c["path"]} for i, c in enumerate(cases)]
+    write_desired(root, items)
+    (reply,) = talk(root, [{"op": "pending", "client": "brave"}])
+    got = {it["raindrop_id"]: it["folder_path"] for it in reply["items"]}
+    for i, c in enumerate(cases):
+        assert got[300 + i] == "/".join(c["parts"]), (c["path"], got[300 + i])
+    # Rejected cases never appear and are recorded once.
+    rejected_cases = [c for c in conftest.FOLDER_PATH_CASES if c["parts"] is None]
+    write_desired(root, [{"raindrop_id": 400 + i, "name": "x", "url": "https://e.example/r",
+                          "folder_path": c["path"]} for i, c in enumerate(rejected_cases)])
+    (reply,) = talk(root, [{"op": "pending", "client": "chrome"}])
+    assert reply["items"] == [], reply
+    assert sum(1 for _, _, st, _, _ in ledger_rows(root) if st == "rejected") == len(rejected_cases)
+
+
+def test_init_db_creates_the_four_ledger_tables_without_touching_stdout(root):
+    env = dict(os.environ, RAINDROP_SYNC_ROOT=str(root))
+    p = subprocess.run([sys.executable, str(HOST), "--init-db"], env=env, capture_output=True, timeout=60)
+    assert p.returncode == 0, p.stderr.decode()
+    assert p.stdout == b"", "stdout is the protocol channel and must stay empty"
+    con = sqlite3.connect(str(root / "state.db"))
+    tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    con.close()
+    assert {"bookmarks", "meta", "runs", "extension_applied"} <= tables, tables
 
 
 def test_unknown_op_returns_ok_false_without_crashing_host(root):

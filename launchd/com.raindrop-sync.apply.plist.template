@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Rendered by scripts/bootstrap.sh with plistlib: __PYTHON__, __ROOT__ and __PROFILE__
+  are replaced, and RAINDROP_SYNC_PROFILE is dropped when no profile was resolved.
+  The agent runs with a near-empty environment, so the root and profile travel here.
+  Load/unload by hand with:
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.raindrop-sync.apply.plist
+    launchctl bootout   gui/$(id -u)/com.raindrop-sync.apply
+-->
 <plist version="1.0">
 <dict>
   <key>Label</key><string>com.raindrop-sync.apply</string>
@@ -16,6 +24,10 @@
   <key>ProcessType</key><string>Background</string>
   <key>LowPriorityBackgroundIO</key><true/>
   <key>EnvironmentVariables</key>
-  <dict><key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string></dict>
+  <dict>
+    <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+    <key>RAINDROP_SYNC_ROOT</key><string>__ROOT__</string>
+    <key>RAINDROP_SYNC_PROFILE</key><string>__PROFILE__</string>
+  </dict>
 </dict>
 </plist>

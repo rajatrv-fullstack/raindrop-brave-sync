@@ -1,8 +1,10 @@
 # ── Never commit anything below. These are per-install and/or private. ──
 
 # Secrets
+# Only the bare .env is ignored: .env.example (empty RAINDROP_TOKEN=, comments) is
+# tracked so a fresh clone can be installed. A .env.* wildcard would swallow it, and a
+# !.env.example negation makes "git check-ignore -v" report the file as matched.
 .env
-.env.*
 *.pem
 *.key
 key.pem*
@@ -17,6 +19,7 @@ reset_folders.json
 taxonomy.json
 collection-map.json
 vendor-allowlist.json
+config.json
 backups/
 log/
 *.log
@@ -35,3 +38,8 @@ launchd/*.local.plist
 __pycache__/
 *.pyc
 .venv/
+
+# coverage data (CI produces its own)
+.coverage
+.coverage.*
+coverage.txt

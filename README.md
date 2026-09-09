@@ -2,7 +2,8 @@
 
 <p align="center">
   <strong>An LLM reads your Raindrop.io library, works out what each save was actually about,<br>
-  sorts it into collections, and mirrors the result onto your Brave bookmarks bar within a minute.</strong>
+  sorts it into collections, and mirrors the result onto your Brave bookmarks bar within a minute<br>
+  of each classification run.</strong>
 </p>
 
 <p align="center">
@@ -28,6 +29,7 @@
 <p align="center">
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/tests.yml/badge.svg"></a>
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/fuzz.yml"><img alt="Fuzz" src="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/fuzz.yml/badge.svg"></a>
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/install.yml"><img alt="Install" src="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/install.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue?style=flat-square"></a>
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square">
   <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib_only-green?style=flat-square">
@@ -222,6 +224,7 @@ Everything is local, under `~/.raindrop-sync/` (mode `0700`):
 | `backups/` | timestamped copies of Brave's `Bookmarks` *and* `Bookmarks.bak`, keep 10 |
 | `log/` | applier and native-host logs |
 | `key.pem` | the extension signing key - pins the extension id, do not lose it |
+| `config.json` | what the installer resolved: root, interpreter, Brave profile, extension id, Brave Sync state |
 
 Nothing leaves your machine except calls to the Raindrop API and whatever your Claude Code
 session sends to the model.
@@ -232,13 +235,21 @@ session sends to the model.
 
 - **macOS.** Verified on macOS 26 with Brave 152. Nothing here is portable to Windows or Linux
   as written (launchd, macOS keychain, macOS profile paths).
-- **Brave.** Other Chromium browsers use the same bookmarks format and the same
-  `chrome.bookmarks` API and *should* work; untested.
-- **Python 3, standard library only.** The system `/usr/bin/python3` is the recommended
-  interpreter - no venv, no pip, and immune to a `brew upgrade` moving a symlink.
-- **A Raindrop.io account and an API token.** The free plan is sufficient; the Pro-only
+- **Brave**, stable, Beta or Nightly, launched at least once so a profile exists. The installer
+  finds the profile Brave last used, in any channel, or takes `RAINDROP_SYNC_PROFILE`. Other
+  Chromium browsers use the same bookmarks format and the same `chrome.bookmarks` API and
+  *should* work; untested.
+- **Xcode Command Line Tools** (`xcode-select --install`), which provide `git` and a real
+  `/usr/bin/python3`. Python 3.9 or newer, standard library only: no venv, no pip. The
+  installer checks this first and stops with that command if the interpreter is missing.
+- **A Raindrop.io account and a test token.** The free plan is sufficient; the Pro-only
   `/raindrop/{id}/suggest` endpoint is deliberately not used.
-- **Claude Code, with a Raindrop connector, for Phase A.**
+- **Claude Code, with the Raindrop MCP connector added in Claude's connector settings, for
+  Phase A.** The classifier reads and writes your library through the connector's tools; a
+  headless `claude -p` run cannot see it, so Phase A runs inside a Claude session, on demand or
+  on a scheduled task you create in the desktop app (SETUP.md step 5).
+- **Brave Sync off** for the file writer. The installer detects sync and installs only the
+  extension path when it is on.
 
 **Be clear about that last one: Phase A needs an LLM and has no fallback.** There is no
 keyword-rules mode, no local-model mode, no "classify by domain" mode. If you are not willing to
@@ -250,15 +261,30 @@ by hand, if that is the half you came for.
 ## Quickstart
 
 ```bash
-git clone <this repo> && cd raindrop-brave-sync
+git clone https://github.com/rajatrv-fullstack/raindrop-brave-sync.git && cd raindrop-brave-sync
 ./scripts/bootstrap.sh
+~/.raindrop-sync/bin/doctor.sh
 ```
 
-That creates `~/.raindrop-sync/`, generates your extension signing key and id, installs the
-native-messaging host manifest, and installs the launchd fallback agent. Then follow
-**[SETUP.md](./SETUP.md)** for the parts that cannot be automated: the Raindrop token, the
-one-time **Load unpacked** of the extension, and the first full classification run that
-generates *your* taxonomy.
+Bootstrap checks the interpreter, finds your Brave profile, creates `~/.raindrop-sync/`,
+generates your extension signing key and id, installs the native-messaging host manifests and
+the launchd fallback agent, and writes `config.json`. The doctor prints one `ok`, `warn` or
+`FAIL` line per check. Then follow **[SETUP.md](./SETUP.md)** for the parts that cannot be
+automated: the Raindrop token, the one-time **Load unpacked** of the extension, the first
+classification run that generates *your* taxonomy, and the daily schedule.
+
+### Giving it to a friend
+
+The install is rehearsed on every push, on a clean macOS runner with the stock `python3`, from a
+copy of the repository (the Install badge above). A friend needs the requirements above and the
+four commands in SETUP.md steps 1 to 3. When something goes wrong, ask them for three things,
+none of which contain the token:
+
+```bash
+~/.raindrop-sync/bin/doctor.sh
+tail -20 ~/.raindrop-sync/log/native_host.log
+tail -20 ~/.raindrop-sync/log/apply.out.log
+```
 
 Read **[SETUP.md](./SETUP.md)** before running anything against a library you care about.
 
@@ -366,10 +392,10 @@ Built and running since 2026-09-05. Honest accounting:
 
 - **macOS only.** launchd, keychain, macOS profile paths.
 - **Brave-focused.** Chromium-family browsers should work; untested.
-- **Phase A requires an interactive Claude Code session.** The classification pass is invoked on
-  demand rather than on a schedule, because the Raindrop connector it reads through is not
-  available to a headless run. The design allows for a daily scheduled fetch agent, and Phase B
-  already runs unattended - but as built, classification is something you start.
+- **Phase A requires a Claude session.** The classification pass runs when you type
+  `/raindrop-sync`, or on a scheduled task you create in the Claude desktop app (SETUP.md
+  step 5); nothing in this repository schedules it, because the Raindrop connector it reads
+  through is not available to a headless run. Phase B runs unattended either way.
 - **The extension must be loaded unpacked, by hand, once.** `--load-extension` only applies to a
   browser you launch yourself. Your extension id is generated from your own `key.pem` and looks
   like `abcdefghijklmnopabcdefghijklmnop`; it will not match anyone else's, and losing `key.pem`
@@ -419,12 +445,25 @@ what had to be discovered by experiment because no documentation says it, includ
 
 ## Tests
 
-`tests/` is a pytest suite (25 tests) that runs on Python 3.10 and 3.12 on every push. It
+`tests/` is a pytest suite (33 tests) that runs on Python 3.10 and 3.12 on every push. It
 exercises the writer and the native host against throwaway directories only and enforces a
 coverage floor of 85 percent; the current figures are printed in each run's job summary. An
 adversarial pass mutated both modules to confirm every test fails when its invariant is broken.
-Two of the tests document bugs found by writing them: an unpaired surrogate in a bookmark title
-used to make every write fail, and the temp file was opened without an explicit encoding.
+Several tests document bugs found by writing them: an unpaired surrogate in a bookmark title
+used to make every write fail, a folder rebuild used to delete applied bookmarks for good, and
+a URL saved as `https://WWW.example.org` used to be duplicated next to `https://www.example.org/`.
+
+`tests/js/run.mjs` runs the real `extension/sw.js` under a stub `chrome` in Node (25 checks, no
+dependencies): rejection of unparseable URLs, canonical matching, backoff when the host is
+unreachable, folder rebuilds, and the folder-path rule shared with the two Python modules
+through one table, `tests/js/folder_paths.json`.
+
+`scripts/ci-rehearsal.sh` is the fresh-install rehearsal: on a clean macOS runner it installs
+from a copy of the checkout with `.env.example` deleted, discovers a Brave Beta profile from a
+fake `Local State`, runs the doctor, talks to the host through its wrapper with the environment
+Brave gives it, runs the file writer twice, rebuilds a folder, re-runs bootstrap, and checks the
+Brave Sync and no-Brave paths. It exists because the 1.0.x installer worked only on the machine
+it was written on.
 
 `fuzz/` is a pair of [atheris](https://github.com/google/atheris) targets that run for 45
 seconds on every push touching `src/` and for ten minutes every week. One feeds arbitrary JSON
