@@ -41,7 +41,7 @@ def resolve_profile(root, env=None):
         if isinstance(p, str) and p:
             return p
     except (OSError, ValueError):
-        pass
+        pass  # no config.json, or not JSON: an install older than 1.1.0, so use the stock path
     return f"{HOME}/Library/Application Support/BraveSoftware/Brave-Browser/Default"
 
 PROFILE  = resolve_profile(ROOT)
@@ -69,7 +69,7 @@ def rotate_logs():
                 os.replace(p, p + ".1")
                 log(f"rotated {name} to {name}.1; the fresh log starts on the next run")
         except OSError:
-            pass
+            pass  # the log does not exist yet (first run, or not under launchd): nothing to rotate
 
 def checksum(doc):
     m = hashlib.md5(usedforsecurity=False)  # Chromium's file checksum, not a security use

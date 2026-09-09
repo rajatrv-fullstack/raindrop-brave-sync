@@ -62,7 +62,7 @@ def log(msg):
             if os.path.getsize(LOG) > MAX_LOG:
                 os.replace(LOG, LOG + ".1")
         except OSError:
-            pass
+            pass  # no log yet, or a rename race with another host process: nothing to rotate
         with open(LOG, "a") as f:
             f.write(f"{datetime.now(timezone.utc).isoformat()} {msg}\n")
     except OSError as e:

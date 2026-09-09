@@ -40,6 +40,12 @@ import apply_brave  # noqa: E402  (must follow the environment pin above)
 with open(Path(__file__).resolve().parent / "js" / "folder_paths.json", encoding="utf-8") as _f:
     FOLDER_PATH_CASES = json.load(_f)["cases"]
 
+
+@pytest.fixture
+def folder_path_cases():
+    """The shared folder_path table, one case per {"path", "parts"}."""
+    return FOLDER_PATH_CASES
+
 # Chromium's well-known permanent-node GUIDs (components/bookmarks/browser/bookmark_node.cc,
 # kBookmarkBarNodeUuid / kOtherBookmarksNodeUuid / kMobileBookmarksNodeUuid).
 ROOT_GUIDS = {

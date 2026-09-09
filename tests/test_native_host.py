@@ -293,11 +293,10 @@ def test_invalid_url_or_empty_folder_is_rejected_once_and_never_offered_again(ro
     assert [it["raindrop_id"] for it in again["items"]] == [102, 103], again
 
 
-def test_pending_normalises_folder_paths_with_the_shared_rule(root):
+def test_pending_normalises_folder_paths_with_the_shared_rule(root, folder_path_cases):
     """The one table in tests/js/folder_paths.json is what the extension and the file writer
     are held to; the host applies it before anything is handed out."""
-    import conftest
-    cases = [c for c in conftest.FOLDER_PATH_CASES if c["parts"] is not None]
+    cases = [c for c in folder_path_cases if c["parts"] is not None]
     items = [{"raindrop_id": 300 + i, "name": f"n{i}", "url": f"https://e.example/{i}",
               "folder_path": c["path"]} for i, c in enumerate(cases)]
     write_desired(root, items)
@@ -306,7 +305,7 @@ def test_pending_normalises_folder_paths_with_the_shared_rule(root):
     for i, c in enumerate(cases):
         assert got[300 + i] == "/".join(c["parts"]), (c["path"], got[300 + i])
     # Rejected cases never appear and are recorded once.
-    rejected_cases = [c for c in conftest.FOLDER_PATH_CASES if c["parts"] is None]
+    rejected_cases = [c for c in folder_path_cases if c["parts"] is None]
     write_desired(root, [{"raindrop_id": 400 + i, "name": "x", "url": "https://e.example/r",
                           "folder_path": c["path"]} for i, c in enumerate(rejected_cases)])
     (reply,) = talk(root, [{"op": "pending", "client": "chrome"}])

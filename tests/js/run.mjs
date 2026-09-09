@@ -37,7 +37,7 @@ function boot({ hostReplies, existing = [] } = {}) {
   let nextId = 10;
   const add = (n) => { nodes.set(n.id, n); return n; };
   const root = add({ id: "0", title: "", children: [] });
-  const bar = add({ id: "1", parentId: "0", title: "Bookmarks Bar", folderType: "bookmarks-bar" });
+  add({ id: "1", parentId: "0", title: "Bookmarks Bar", folderType: "bookmarks-bar" });
   add({ id: "2", parentId: "0", title: "Other Bookmarks", folderType: "other" });
   for (const [title, url, parent] of existing) add({ id: String(nextId++), parentId: parent || "1", title, url: canon(url) });
 

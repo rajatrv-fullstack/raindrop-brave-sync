@@ -579,11 +579,11 @@ def test_write_survives_a_lone_surrogate_in_an_existing_title(sandbox, bm, capsy
 
 # --- 13. rules shared with the host and the extension ----------------------------------------
 
-def test_canon_and_folder_rule_agree_with_the_host_copy_and_the_shared_table():
+def test_canon_and_folder_rule_agree_with_the_host_copy_and_the_shared_table(folder_path_cases):
     """canon() and norm_folder_path() are duplicated in native_host.py because the two files
     are installed separately. This is the check that keeps the copies identical, and holds
     both to the table the extension's harness reads (tests/js/folder_paths.json)."""
-    import importlib.util, conftest
+    import importlib.util
     from pathlib import Path
     src = Path(apply_brave.__file__).resolve().parent
     spec = importlib.util.spec_from_file_location("nh", src / "native_host.py")
@@ -592,7 +592,7 @@ def test_canon_and_folder_rule_agree_with_the_host_copy_and_the_shared_table():
     for name in ("canon", "norm_folder_path", "_split_netloc"):
         assert inspect.getsource(getattr(apply_brave, name)) == inspect.getsource(getattr(nh, name)), (
             f"{name}() differs between apply_brave.py and native_host.py")
-    for c in conftest.FOLDER_PATH_CASES:
+    for c in folder_path_cases:
         assert apply_brave.norm_folder_path(c["path"]) == c["parts"], c
     for raw, want in (("https://WWW.Example.org", "https://www.example.org/"),
                       ("HTTPS://example.org/A?b=C#D", "https://example.org/A?b=C#D"),
