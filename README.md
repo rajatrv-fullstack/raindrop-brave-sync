@@ -26,6 +26,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/tests.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue?style=flat-square"></a>
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square">
   <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib_only-green?style=flat-square">
@@ -412,6 +413,15 @@ what had to be discovered by experiment because no documentation says it, includ
   same failure the timestamp watermark was rejected for, reached by a different route.
 
 ---
+
+## Tests
+
+`tests/` is a pytest suite (25 tests) that runs on Python 3.9 and 3.12 on every push. It
+exercises the writer and the native host against throwaway directories only and enforces a
+coverage floor of 85 percent; the current figures are printed in each run's job summary. An
+adversarial pass mutated both modules to confirm every test fails when its invariant is broken.
+Two of the tests document bugs found by writing them: an unpaired surrogate in a bookmark title
+used to make every write fail, and the temp file was opened without an explicit encoding.
 
 ## Security
 

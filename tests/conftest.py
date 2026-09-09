@@ -191,6 +191,8 @@ class Sandbox:
             "RAINDROP_SYNC_ROOT": str(self.root),
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONIOENCODING": "utf-8",
+            # Let coverage follow the child process when CI is measuring (harmless otherwise).
+            **{k: v for k, v in os.environ.items() if k.startswith("COVERAGE_")},
         }
 
     def run_apply(self):

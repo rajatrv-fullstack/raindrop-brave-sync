@@ -100,8 +100,15 @@ def backup():
 def atomic_write(doc):
     fd, tmp = tempfile.mkstemp(dir=PROFILE, prefix=".bm-")
     try:
-        with os.fdopen(fd, "w") as f:
-            json.dump(doc, f, ensure_ascii=False)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            try:
+                json.dump(doc, f, ensure_ascii=False)
+            except UnicodeEncodeError:
+                # A title with an unpaired surrogate (Chromium tolerates these; checksum() hashes
+                # them with surrogatepass). Raw UTF-8 cannot carry it, so fall back to JSON
+                # escapes: valid UTF-8 on disk, and Chromium's reader maps \udXXX to U+FFFD.
+                f.seek(0); f.truncate()
+                json.dump(doc, f, ensure_ascii=True)
             f.flush(); os.fsync(f.fileno())
         os.chmod(tmp, 0o600)
         os.replace(tmp, BOOKMARKS)

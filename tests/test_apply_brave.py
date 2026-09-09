@@ -560,12 +560,6 @@ def test_no_temp_file_is_left_after_success_or_failure(sandbox, bm, monkeypatch,
 
 # --- extra: a bug found while writing test 2 ------------------------------------------------
 
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG in apply_brave.atomic_write: the temp file is opened as strict UTF-8 text and "
-    "json.dump(..., ensure_ascii=False) emits an unpaired surrogate raw, so any title holding "
-    "one (which checksum() deliberately tolerates via surrogatepass, RESEARCH.md section 1) "
-    "raises UnicodeEncodeError inside atomic_write. main() then returns 1 and restores the "
-    "backup on every tick, so a profile with such a title can never receive a promotion."))
 def test_write_survives_a_lone_surrogate_in_an_existing_title(sandbox, bm, capsys):
     doc = bm.doc(bar=[bm.url("lone \ud800 surrogate", "https://example.com/s")])
     # On disk such a title is a \ud800 escape inside otherwise valid UTF-8.
