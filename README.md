@@ -27,6 +27,7 @@
 
 <p align="center">
   <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/tests.yml/badge.svg"></a>
+  <a href="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/fuzz.yml"><img alt="Fuzz" src="https://github.com/rajatrv-fullstack/raindrop-brave-sync/actions/workflows/fuzz.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue?style=flat-square"></a>
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square">
   <img alt="Python stdlib only" src="https://img.shields.io/badge/python-stdlib_only-green?style=flat-square">
@@ -425,6 +426,14 @@ adversarial pass mutated both modules to confirm every test fails when its invar
 Two of the tests document bugs found by writing them: an unpaired surrogate in a bookmark title
 used to make every write fail, and the temp file was opened without an explicit encoding.
 
+`fuzz/` is a pair of [atheris](https://github.com/google/atheris) targets that run for 45
+seconds on every push touching `src/` and for ten minutes every week. One feeds arbitrary JSON
+to the native host and corrupts the files it reads mid-run; the other generates bookmark trees
+across every Unicode plane and hands arbitrary bytes to the writer's preflight. Each target
+states a contract (never raises, never modifies the file, exits 2 or returns) and fails on the
+first input that breaks it. The first run found one: a lone surrogate in a URL made `preflight`
+raise instead of abort. See [fuzz/README.md](fuzz/README.md).
+
 ## Security
 
 The complete list of what leaves your machine is in [PRIVACY.md](PRIVACY.md): the Raindrop API,
@@ -435,7 +444,8 @@ This tool writes into your browser profile and handles an API token, so the bar 
 low: nothing crashes, a library is quietly damaged or a credential quietly leaks. Read the
 [security policy](https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/policy) for what is in scope and report privately through
 [GitHub advisories](https://github.com/rajatrv-fullstack/raindrop-brave-sync/security/advisories/new), never in a public issue. The repository runs
-secret scanning with push protection and CodeQL on every push.
+secret scanning with push protection, CodeQL, Bandit and Semgrep on every push, and the fuzz
+harness above as its dynamic analysis.
 
 ## Contributing
 

@@ -69,7 +69,12 @@ def preflight():
     for bad in ("AccountBookmarks", "EncryptedBookmarks2", "EncryptedAccountBookmarks2"):
         if os.path.exists(f"{PROFILE}/{bad}"):
             log(f"ABORT: {bad} present (account/encrypted storage out of scope)."); sys.exit(2)
-    doc = read_json(BOOKMARKS)
+    try:
+        doc = read_json(BOOKMARKS)
+    except (OSError, ValueError) as e:
+        log(f"ABORT: Bookmarks is not readable JSON ({e}). Refusing to touch it."); sys.exit(2)
+    if not isinstance(doc, dict) or not isinstance(doc.get("roots"), dict):
+        log("ABORT: Bookmarks has no roots object. Refusing to touch it."); sys.exit(2)
     if doc.get("version") != 1:
         log(f"ABORT: unexpected version {doc.get('version')}"); sys.exit(2)
     for r in ("bookmark_bar", "other", "synced"):
@@ -78,7 +83,15 @@ def preflight():
     if "sync_metadata" in doc:
         log("ABORT: Brave Sync is enabled. External nodes would corrupt sync metadata "
             "and upload to every device. Disable bookmark sync or remove this job."); sys.exit(2)
-    if checksum(doc) != doc.get("checksum"):
+    try:
+        computed = checksum(doc)
+    except (KeyError, TypeError, AttributeError, UnicodeEncodeError) as e:
+        # UnicodeEncodeError: an unpaired surrogate in an id or URL. Chromium stores those as
+        # valid UTF-8, so the file was not written by the browser. Found by fuzz/fuzz_bookmarks.py.
+        # A node without id/name/type, or children that are not a list: the tree is not one
+        # Chromium wrote. Writing anything back would risk the fresh-profile failure (finding 6).
+        log(f"ABORT: bookmark tree is malformed ({e.__class__.__name__}: {e}). Refusing to touch it."); sys.exit(2)
+    if computed != doc.get("checksum"):
         log("ABORT: stored checksum does not match. Something else is editing this file."); sys.exit(2)
     return doc
 

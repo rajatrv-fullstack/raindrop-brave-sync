@@ -5,6 +5,31 @@ All notable changes to this project are recorded here. The format follows
 [Semantic Versioning](https://semver.org/). Each entry is also published as the notes on the
 matching GitHub release.
 
+## [1.0.1] - 2026-09-09
+
+### Added
+
+- `fuzz/`: two atheris targets (native host message handler; bookmark checksum and preflight)
+  with a `Fuzz` workflow that runs them for 45 seconds on every push touching `src/` and for
+  ten minutes weekly. Crashing inputs are uploaded as workflow artifacts.
+- `native_host.handle(msg)`: the dispatch is now a function that returns a reply dict for any
+  input, so it can be tested and fuzzed without a pipe.
+
+### Fixed
+
+- `apply_brave.preflight` raised `UnicodeEncodeError` instead of aborting with exit 2 when a
+  URL or id in the Bookmarks file held an unpaired surrogate. Found by the fuzz harness on its
+  first run.
+- `apply_brave.preflight` now also aborts cleanly on a Bookmarks file that is not valid JSON,
+  has no `roots` object, or has a malformed tree, instead of raising.
+- `native_host` no longer raises on a non-object message, a non-string `client`, or a
+  `results` field that is not a list of objects; each returns an error reply.
+
+### Upgrade impact
+
+- None for users; re-run `scripts/bootstrap.sh` to pick up the new `src/`. No change to the
+  extension, the manifest, the ledger schema or any file format.
+
 ## [1.0.0] - 2026-09-09
 
 First public release.
@@ -42,4 +67,5 @@ First public release.
 - Safari support (no supported write path exists; see RESEARCH.md finding 10).
 - A bundled taxonomy, any cloud component, any telemetry.
 
+[1.0.1]: https://github.com/rajatrv-fullstack/raindrop-brave-sync/releases/tag/v1.0.1
 [1.0.0]: https://github.com/rajatrv-fullstack/raindrop-brave-sync/releases/tag/v1.0.0

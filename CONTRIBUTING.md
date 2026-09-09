@@ -55,6 +55,13 @@ python3 -m pip install "pytest>=9.0.3" coverage   # the suite needs Python 3.10+
 python3 -m pytest tests -q
 ```
 
+`fuzz/` holds two atheris targets that CI runs on every push touching `src/`. If you change a
+parser or a contract they check (`native_host.handle`, `apply_brave.checksum`,
+`apply_brave.preflight`), run the matching target for a minute before opening the pull request;
+without libFuzzer on your machine the same file runs a short random smoke loop instead. A
+crashing input from CI is uploaded as a workflow artifact and replays with
+`python3 fuzz/<target>.py crash-<hash>`. Details in [fuzz/README.md](fuzz/README.md).
+
 ## Code
 
 - Python: stdlib only. No dependencies is a feature; keep it.

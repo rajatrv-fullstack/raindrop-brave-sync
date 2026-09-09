@@ -25,6 +25,8 @@ discoverable from one place.
 
 - [SECURITY.md](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/SECURITY.md): reporting, scope, and the controls that run on
   every push.
+- [fuzz/README.md](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/fuzz/README.md): the fuzz targets, their contracts, and
+  how to replay a crashing input.
 - [PRIVACY.md](https://github.com/rajatrv-fullstack/raindrop-brave-sync/blob/main/PRIVACY.md): the complete list of what leaves your machine.
 - [Safety and Ownership Model](https://github.com/rajatrv-fullstack/raindrop-brave-sync/wiki/Safety-and-Ownership-Model): what can and cannot
   happen to your bookmarks, and why.

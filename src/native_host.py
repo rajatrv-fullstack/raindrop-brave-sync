@@ -22,7 +22,7 @@ def read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 ROOT    = os.environ.get("RAINDROP_SYNC_ROOT", os.path.expanduser("~/.raindrop-sync"))
 DESIRED = f"{ROOT}/desired.json"
 DB      = f"{ROOT}/state.db"
@@ -61,7 +61,7 @@ def send_message(obj):
     sys.stdout.buffer.flush()
 
 def norm_client(c):
-    c = (c or "").strip().lower()
+    c = c.strip().lower() if isinstance(c, str) else ""
     return c if c in ("brave", "chrome", "edge", "vivaldi", "opera") else "unknown"
 
 def op_pending(client):
@@ -120,6 +120,32 @@ def op_applied(client, results):
     log(f"applied[{client}]: recorded {n} results")
     return {"ok": True, "recorded": n}
 
+def handle(msg):
+    """Dispatch one decoded message and return the reply dict.
+
+    Contract (enforced by tests and the fuzz harness): for ANY JSON value, this returns a
+    dict and never raises. A malformed message is answered with ok false, not a crash.
+    """
+    if not isinstance(msg, dict):
+        return {"ok": False, "error": "message must be a JSON object"}
+    op = msg.get("op")
+    try:
+        if op == "ping":
+            return {"ok": True, "version": VERSION}
+        if op == "pending":
+            return op_pending(norm_client(msg.get("client")))
+        if op == "applied":
+            results = msg.get("results")
+            if not isinstance(results, list):
+                return {"ok": False, "error": "results must be a list"}
+            return op_applied(norm_client(msg.get("client")), [r for r in results if isinstance(r, dict)])
+        log(f"unknown op {op!r}")
+        return {"ok": False, "error": "unknown op"}
+    except Exception as e:
+        log(f"op {op!r} failed: {e}")
+        return {"ok": False, "error": str(e)}
+
+
 def main():
     log(f"host start (pid {os.getpid()})")
     while True:
@@ -129,18 +155,10 @@ def main():
             log(f"read error: {e}"); return 1
         if msg is None:
             log("stream closed"); return 0
-        op = msg.get("op")
         try:
-            if op == "ping":      send_message({"ok": True, "version": VERSION})
-            elif op == "pending": send_message(op_pending(norm_client(msg.get("client"))))
-            elif op == "applied": send_message(op_applied(norm_client(msg.get("client")),
-                                                          msg.get("results")))
-            else:
-                log(f"unknown op {op!r}"); send_message({"ok": False, "error": "unknown op"})
-        except Exception as e:
-            log(f"op {op} failed: {e}")
-            try: send_message({"ok": False, "error": str(e)})
-            except Exception: return 1
+            send_message(handle(msg))
+        except Exception:
+            return 1
 
 if __name__ == "__main__":
     sys.exit(main())

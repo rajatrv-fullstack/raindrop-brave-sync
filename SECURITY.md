@@ -43,12 +43,17 @@ documented decision within a month for anything in scope. There is no bug bounty
 
 ## Supported versions
 
-Only the `main` branch. There are no releases yet; install from `main`.
+The latest release and the `main` branch. Fixes land on `main` first and are tagged in the
+next release; see [CHANGELOG.md](CHANGELOG.md).
 
 ## What this repo already runs
 
 - Secret scanning with push protection, so a token cannot be pushed by accident.
-- CodeQL on Python and JavaScript.
+- CodeQL on Python and JavaScript, plus Bandit and Semgrep, all failing the build on a finding.
+- A fuzz harness (atheris) over the native host's message handler and the writer's preflight,
+  45 seconds per push and ten minutes weekly. See `fuzz/README.md`.
+- OpenSSF Scorecard, with every action pinned by commit hash and every CI dependency pinned by
+  hash.
 - Private vulnerability reporting.
 
 ## Design notes that bear on security
