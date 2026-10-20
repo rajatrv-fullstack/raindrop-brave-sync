@@ -21,7 +21,7 @@ jobs:
     name: fresh install on macOS (stock python3)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rehearse a first-time install in a sandbox
         # No setup-python on purpose: the point is /usr/bin/python3 as a new user has it.
         run: scripts/ci-rehearsal.sh "$RUNNER_TEMP/rehearsal" | tee rehearsal.txt
